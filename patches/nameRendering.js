@@ -4,19 +4,13 @@ import ModUtils, { insert } from "../modUtils.js"
 
 export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, matchCode, replaceOne, safeDictionary }) => {
 
-  // Install the growth calculator before Uglify can inline the temporary
-  // interest-income variable. The division helper is an object method in the
-  // current game code (for example bO.fs), hence the two-part matcher.
-  modifyCode(`
+  // Capture the exact helpers used by the game to calculate interest. The
+  // calculation is inserted directly into rendering, so it is available even
+  // before the first interest tick.
+  const { integerDivisionObject, integerDivision, interestManager, getInterestIncome } = matchCode(`
     var interestIncome = integerDivisionObject.integerDivision(interestManager.getInterestIncome(player) * playerBalances[player], 10000);
-    ${insert(`__fx.utils.getPlayerGrowth = currentPlayer =>
-      Math.max(1, integerDivisionObject.integerDivision(
-        interestManager.getInterestIncome(currentPlayer) * playerData.playerBalances[currentPlayer], 10000
-      )) + playerData.playerTerritories[currentPlayer] / 10;`)}
     balanceManagerObject.balanceManager.addBalance(player, Math.max(interestIncome, 1));`, { dictionary: {
-      playerData: safeDictionary.playerData,
       playerBalances: safeDictionary.playerBalances,
-      playerTerritories: safeDictionary.playerTerritories,
     } })
 
   const { placeBalanceAbove } = matchCode(`aLT += Math.floor(0.78 * fontSize);
@@ -40,7 +34,10 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
         __fx.settings.coloredDensity && (ctx.fillStyle = __fx.utils.textStyleBasedOnDensity(i)), ctx.fillText(__fx.utils.getDensity(i), x, y + fontSize * statsLine++);
       if (!placeBalanceAbove && __fx.settings.showPlayerGrowth) {
         ctx.fillStyle = statsColor;
-        ctx.fillText("+" + Util.s1.formatNumber(__fx.utils.getPlayerGrowth(i)), x, y + fontSize * statsLine);
+        var growth = Math.max(1, integerDivisionObject.integerDivision(
+          interestManager.getInterestIncome(i) * playerData.playerBalances[i], 10000
+        )) + playerData.playerTerritories[i] / 10;
+        ctx.fillText("+" + Util.s1.formatNumber(growth), x, y + fontSize * statsLine);
       }
     }`)}
     if (a4f) {
@@ -66,7 +63,16 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
     ctx.fillText(aLe, x, y);
     ${insert(`drawPlayerStats();`)}
   }`,
-    { dictionary: { placeBalanceAbove } },
+    { dictionary: {
+      placeBalanceAbove,
+      integerDivisionObject,
+      integerDivision,
+      interestManager,
+      getInterestIncome,
+      playerData: safeDictionary.playerData,
+      playerBalances: safeDictionary.playerBalances,
+      playerTerritories: safeDictionary.playerTerritories,
+    } },
   )
 
   waitForMinification(() => {
@@ -86,7 +92,10 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
         }
         if (${placeBalanceAbove} && __fx.settings.showPlayerGrowth) {
           $<canvas>.fillStyle = ___statsColor;
-          $<canvas>.fillText("+" + ${Util}.${numberFormatter}.${formatNumber}(__fx.utils.getPlayerGrowth(___id)), $<x>, ___statsY);
+          var ___growth = Math.max(1, ${integerDivisionObject}.${integerDivision}(
+            ${interestManager}.${getInterestIncome}(___id) * ${safeDictionary.playerData}.${safeDictionary.playerBalances}[___id], 1e4
+          )) + ${safeDictionary.playerData}.${safeDictionary.playerTerritories}[___id] / 10;
+          $<canvas>.fillText("+" + ${Util}.${numberFormatter}.${formatNumber}(___growth), $<x>, ___statsY);
         } }`,
     )
   })
