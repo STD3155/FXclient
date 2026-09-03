@@ -11,15 +11,14 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
       playerBalances: safeDictionary.playerBalances,
     } })
 
-  // Reuse the interest income the game has already calculated and cache the
-  // formatted growth text for humans only. Rendering then only draws the text.
+  // Reuse the interest income the game has already calculated. Store only the
+  // numeric value here; formatting is deferred until a label is actually drawn.
   modifyCode(`
     var interestIncome = integerDivisionObject.integerDivision(interestManager.getInterestIncome(player) * playerBalances[player], 10000);
     ${insert(`if (__fx.utils.isHumanPlayer(player)) {
       var growthValues = __fx.utils.playerGrowth || (__fx.utils.playerGrowth = []);
-      growthValues[player] = "+" + Util.numberFormatter.formatNumber(
-        Math.max(interestIncome, 1) + playerData.playerTerritories[player] / 10
-      );
+      growthValues[player] = Math.max(interestIncome, 1) + playerData.playerTerritories[player] / 10;
+      (__fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []))[player] = undefined;
     }`)}
     balanceManagerObject.balanceManager.addBalance(player, Math.max(interestIncome, 1));`, { dictionary: {
       playerBalances: safeDictionary.playerBalances,
@@ -39,15 +38,27 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
     var a4f = playerData.a4f[i];
     var aLe = Util.s1.formatNumber(playerData.playerBalances[i] - a4f);
     ${insert(`function drawPlayerStats() {
+      if (__fx.settings.adaptivePlayerStats
+          && fontSize < 9 * (__fx.hoveringTooltip.canvasPixelScale || 1)) return;
       var statsColor = ctx.fillStyle;
       var statsLine = 1;
-      if (!placeBalanceAbove && __fx.settings.showPlayerDensity)
-        __fx.settings.coloredDensity && (ctx.fillStyle = __fx.utils.textStyleBasedOnDensity(i)), ctx.fillText(__fx.utils.getDensity(i), x, y + fontSize * statsLine++);
+      if (!placeBalanceAbove && __fx.settings.showPlayerDensity) {
+        var densityStats = __fx.utils.getDensityStats(
+          i, playerData.playerBalances, playerData.playerTerritories, __fx.settings.densityDisplayStyle
+        );
+        __fx.settings.coloredDensity && (ctx.fillStyle = densityStats.color);
+        ctx.fillText(densityStats.text, x, y + fontSize * statsLine++);
+      }
       if (!placeBalanceAbove && __fx.settings.showPlayerGrowth
           && __fx.utils.playerGrowth && __fx.utils.playerGrowth[i] !== undefined) {
         ctx.fillStyle = statsColor;
-        ctx.fillText(__fx.utils.playerGrowth[i], x, y + fontSize * statsLine);
+        var growthText = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []);
+        var growthLabel = growthText[i];
+        if (growthLabel === undefined)
+          growthLabel = growthText[i] = "+" + Util.s1.formatNumber(__fx.utils.playerGrowth[i]);
+        ctx.fillText(growthLabel, x, y + fontSize * statsLine);
       }
+      ctx.fillStyle = statsColor;
     }`)}
     if (a4f) {
       var eY = ctx.fillStyle;
@@ -90,16 +101,29 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
         if (showName) $7, $10;
         var ___statsY = showName ? $<y> + $<fontSize> : $<y>;
         var ___statsColor = $<canvas>.fillStyle;
-        if (${placeBalanceAbove} && __fx.settings.showPlayerDensity) {
-          __fx.settings.coloredDensity && ($<canvas>.fillStyle = __fx.utils.textStyleBasedOnDensity(___id));
-          $<canvas>.fillText(__fx.utils.getDensity(___id), $<x>, ___statsY);
+        var ___showStats = !__fx.settings.adaptivePlayerStats
+          || $<fontSize> >= 9 * (__fx.hoveringTooltip.canvasPixelScale || 1);
+        if (___showStats && ${placeBalanceAbove} && __fx.settings.showPlayerDensity) {
+          var ___densityStats = __fx.utils.getDensityStats(
+            ___id,
+            $<playerData>.${safeDictionary.playerBalances},
+            $<playerData>.${safeDictionary.playerTerritories},
+            __fx.settings.densityDisplayStyle
+          );
+          __fx.settings.coloredDensity && ($<canvas>.fillStyle = ___densityStats.color);
+          $<canvas>.fillText(___densityStats.text, $<x>, ___statsY);
           ___statsY += $<fontSize>;
         }
-        if (${placeBalanceAbove} && __fx.settings.showPlayerGrowth
+        if (___showStats && ${placeBalanceAbove} && __fx.settings.showPlayerGrowth
             && __fx.utils.playerGrowth && __fx.utils.playerGrowth[___id] !== undefined) {
           $<canvas>.fillStyle = ___statsColor;
-          $<canvas>.fillText(__fx.utils.playerGrowth[___id], $<x>, ___statsY);
-        } }`,
+          var ___growthText = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []);
+          var ___growthLabel = ___growthText[___id];
+          if (___growthLabel === undefined)
+            ___growthLabel = ___growthText[___id] = "+" + ${Util}.${numberFormatter}.${formatNumber}(__fx.utils.playerGrowth[___id]);
+          $<canvas>.fillText(___growthLabel, $<x>, ___statsY);
+        }
+        $<canvas>.fillStyle = ___statsColor; }`,
     )
   })
 }

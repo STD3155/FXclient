@@ -20,6 +20,7 @@ var settings = {
   realisticNames: false,
   showPlayerDensity: true,
   showPlayerGrowth: true,
+  adaptivePlayerStats: true,
   coloredDensity: true,
   densityDisplayStyle: "absoluteQuotient",
   hideBotNames: false,
@@ -466,6 +467,12 @@ const settingsManager = new (function () {
       type: "checkbox",
       label: "Show player growth",
       note: "Displays the current average growth per tick (interest income plus one tenth of territorial income).",
+    },
+    {
+      for: "adaptivePlayerStats",
+      type: "checkbox",
+      label: "Hide map stats at low zoom",
+      note: "Improves responsiveness by only drawing density and growth when player labels are large enough to read.",
     },
     {
       for: "coloredDensity",

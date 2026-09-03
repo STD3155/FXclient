@@ -6,9 +6,33 @@ import { getVar } from "./gameInterface.js";
 function getMaxTroops(playerTerritories, playerID) {
     return (playerTerritories[playerID] * 150).toString();
 };
-function getDensity(playerID, playerBalances = getVar("playerBalances"), playerTerritories = getVar("playerTerritories")) {
-    if (getSettings().densityDisplayStyle === "percentage") return (((playerBalances[playerID] / ((playerTerritories[playerID] === 0 ? 1 : playerTerritories[playerID]) * 150)) * 100).toFixed(1) + "%");
-    else return (playerBalances[playerID] / (playerTerritories[playerID] === 0 ? 1 : playerTerritories[playerID])).toFixed(1);
+const densityCache = [];
+function getDensityStats(
+    playerID,
+    playerBalances = getVar("playerBalances"),
+    playerTerritories = getVar("playerTerritories"),
+    style = getSettings().densityDisplayStyle
+) {
+    const balance = playerBalances[playerID];
+    const territory = playerTerritories[playerID];
+    let cached = densityCache[playerID];
+
+    if (!cached) cached = densityCache[playerID] = {};
+    if (cached.balance !== balance || cached.territory !== territory || cached.style !== style) {
+        const safeTerritory = territory || 1;
+        const density = balance / safeTerritory;
+        cached.balance = balance;
+        cached.territory = territory;
+        cached.style = style;
+        cached.text = style === "percentage"
+            ? (density / 1.5).toFixed(1) + "%"
+            : density.toFixed(1);
+        cached.color = `hsl(${territory ? density / 1.5 : 0}, 100%, 50%, 1)`;
+    }
+    return cached;
+}
+function getDensity(playerID, playerBalances, playerTerritories) {
+    return getDensityStats(playerID, playerBalances, playerTerritories).text;
 };
 function isPointInRectangle(x, y, rectangleStartX, rectangleStartY, width, height) {
     return x >= rectangleStartX && x <= rectangleStartX + width && y >= rectangleStartY && y <= rectangleStartY + height;
@@ -22,8 +46,7 @@ function fillTextMultiline(canvas, text, x, y, maxWidth) {
     text.split("\n").forEach((line, index) => canvas.fillText(line, x, y + index * lineHeight, maxWidth));
 }
 function textStyleBasedOnDensity(playerID) {
-    const playerBalances = getVar("playerBalances"), playerTerritories = getVar("playerTerritories");
-    return `hsl(${playerBalances[playerID] / (playerTerritories[playerID] * 1.5)}, 100%, 50%, 1)`;
+    return getDensityStats(playerID).color;
 }
 // specific color pallete so two ips dont have a similar looking color
 const duplicateIpColorPalette = [
@@ -106,4 +129,4 @@ function getDuplicateIpHighlightColor(player, entries, ipField) {
     return getIpColors(entries, ipField).get(ip) || null;
 }
 
-export default { getMaxTroops, getDensity, isHumanPlayer, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor }
+export default { getMaxTroops, getDensity, getDensityStats, isHumanPlayer, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor }

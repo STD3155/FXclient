@@ -2,12 +2,13 @@ import { getSettings } from "./settings.js";
 import { getVar } from "./gameInterface.js";
 
 const hoveringTooltip = new (function() {
-    let recentlyShown = false;
+    let lastShown = 0;
     this.display = () => {}; // this gets populated by the modified game script
     this.active = false;
     this.canvasPixelScale = 1;
     function handler(e) {
-        if (!getSettings().hoveringTooltip || !getVar("gameState") || recentlyShown) return;
+        const now = performance.now();
+        if (!getSettings().hoveringTooltip || !getVar("gameState") || now - lastShown < 100) return;
         let x, y;
         // https://stackoverflow.com/a/61732450
         if (e.type.includes(`touch`)) {
@@ -20,14 +21,15 @@ const hoveringTooltip = new (function() {
             y = e.clientY;
         }
 
-        recentlyShown = true;
+        lastShown = now;
         try {
             this.active = true;
             this.display(this.canvasPixelScale * x, this.canvasPixelScale * y);
+        } catch (e) {
+            console.error(e);
+        } finally {
             this.active = false;
-        } catch (e) { console.error(e) }
-        // for better performance, reduce the tooltip display frequency to no more than once every 100 ms
-        setTimeout(() => recentlyShown = false, 100);
+        }
     }
     document.getElementById("canvasA").addEventListener("mousemove", handler.bind(this));
     document.getElementById("canvasA").addEventListener("touchstart", handler.bind(this));

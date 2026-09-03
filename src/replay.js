@@ -18,6 +18,7 @@ const replay = {
         this.tick = 0;
         if (!this.isRestarting) this.seekTarget = this.restoreState = null;
         this.isRestarting = false;
+        startBarUpdates();
     },
 
     isWatching() {
@@ -116,32 +117,61 @@ const formatTime = (time) => {
     return m + (s < 10 ? ":0" : ":") + s;
 };
 
+let barAnimationFrame = null;
+let barVisible = false;
+let lastBottom = "";
+let lastFill = "";
+let lastMarker = "";
+let lastSeeking = false;
+let lastCurrentTime = "";
+let lastTotalTime = "";
+
+function startBarUpdates() {
+    if (barAnimationFrame === null) barAnimationFrame = requestAnimationFrame(updateBar);
+}
+
 function updateBar() {
-    requestAnimationFrame(updateBar);
-    const visible = getSettings().showReplayTimebar && replay.isWatching() && !getVar("uiHidden");
-    bar.classList.toggle("d-none", !visible);
+    barAnimationFrame = null;
+    const watching = replay.isWatching();
+    const visible = getSettings().showReplayTimebar && watching && !getVar("uiHidden");
+    if (visible !== barVisible) {
+        barVisible = visible;
+        bar.classList.toggle("d-none", !visible);
+    }
     if (!visible) {
         drag = null;
+        if (watching) startBarUpdates();
         return;
     }
     const panelTop = replay.controls && replay.controls.fxGetPanelTop();
     const scale = hoveringTooltip.canvasPixelScale || window.devicePixelRatio || 1;
-    if (panelTop > 0) bar.style.bottom = Math.max(0, Math.round(window.innerHeight - panelTop / scale) + 8) + "px";
+    const bottom = panelTop > 0 ? Math.max(0, Math.round(window.innerHeight - panelTop / scale) + 8) + "px" : "";
+    if (bottom !== lastBottom) bar.style.bottom = lastBottom = bottom;
 
     const total = replay.getTotalTicks();
     const seeking = replay.seekTarget !== null && total !== 0;
     let fraction = total ? Math.min(replay.tick / total, 1) : 0;
     if (drag !== null) fraction = drag;
 
-    fill.style.width = (fraction * 100).toFixed(2) + "%";
-    bar.classList.toggle("seeking", seeking);
-    marker.classList.toggle("d-none", !seeking);
-    if (seeking) marker.style.left = (Math.min(replay.seekTarget / total, 1) * 100).toFixed(2) + "%";
+    const fillWidth = (Math.max(0, fraction) * 100).toFixed(2) + "%";
+    if (fillWidth !== lastFill) fill.style.width = lastFill = fillWidth;
+    if (seeking !== lastSeeking) {
+        lastSeeking = seeking;
+        bar.classList.toggle("seeking", seeking);
+        marker.classList.toggle("d-none", !seeking);
+    }
+    if (seeking) {
+        const markerPosition = (Math.min(replay.seekTarget / total, 1) * 100).toFixed(2) + "%";
+        if (markerPosition !== lastMarker) marker.style.left = lastMarker = markerPosition;
+    }
 
     const tickDuration = replay.getTickDuration();
-    currentTime.textContent = formatTime(fraction * total * tickDuration);
-    totalTime.textContent = formatTime(total * tickDuration);
+    const nextCurrentTime = formatTime(fraction * total * tickDuration);
+    const nextTotalTime = formatTime(total * tickDuration);
+    if (nextCurrentTime !== lastCurrentTime) currentTime.textContent = lastCurrentTime = nextCurrentTime;
+    if (nextTotalTime !== lastTotalTime) totalTime.textContent = lastTotalTime = nextTotalTime;
+    startBarUpdates();
 }
-requestAnimationFrame(updateBar);
+startBarUpdates();
 
 export default replay;
