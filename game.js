@@ -6931,7 +6931,7 @@ function cc() {
 				for (var lN = am.lN, hT = ah.hT, aC = am.lI - 1; 0 <= aC; aC--) {
 					var gz = lN[aC],
 						aKv = bO.fs(af.aCn(gz) * hT[gz], 1e4);
-					__fx.utils.getPlayerGrowth = currentPlayer => Math.max(1, bO.fs(af.aCn(currentPlayer) * ah.hT[currentPlayer], 1e4)) + ah.hF[currentPlayer] / 10, bD.gn.gq(gz, Math.max(aKv, 1))
+					bD.gn.gq(gz, Math.max(aKv, 1))
 				}
 				aKw(9)
 			}(), function() {
@@ -7041,7 +7041,10 @@ function ce() {
 		}
 		if (aLV && __fx.settings.showPlayerGrowth) {
 			iT.fillStyle = ___statsColor;
-			iT.fillText("+" + bD.sJ.a0e(__fx.utils.getPlayerGrowth(___id)), fY, ___statsY);
+			var ___growth = Math.max(1, bO.fs(
+				af.aCn(___id) * ah.hT[___id], 1e4
+			)) + ah.hF[___id] / 10;
+			iT.fillText("+" + bD.sJ.a0e(___growth), fY, ___statsY);
 		}
 	}
 
@@ -7053,7 +7056,7 @@ function ce() {
 			var statsColor = iT.fillStyle,
 				statsLine = 1;
 			!aLV && __fx.settings.showPlayerDensity && (__fx.settings.coloredDensity && (iT.fillStyle = __fx.utils.textStyleBasedOnDensity(aC)), iT.fillText(__fx.utils.getDensity(aC), aLi, aLj + fontSize * statsLine++)), !aLV && __fx.settings
-				.showPlayerGrowth && (iT.fillStyle = statsColor, iT.fillText("+" + bD.sJ.a0e(__fx.utils.getPlayerGrowth(aC)), aLi, aLj + fontSize * statsLine))
+				.showPlayerGrowth && (iT.fillStyle = statsColor, statsColor = Math.max(1, bO.fs(af.aCn(aC) * ah.hT[aC], 1e4)) + ah.hF[aC] / 10, iT.fillText("+" + bD.sJ.a0e(statsColor), aLi, aLj + fontSize * statsLine))
 		}
 		a4u ? (a4u = iT.fillStyle, iT.fillStyle = aLn(fontSize, 2 + aLk % 2), iT.fillText(aLu, aLi, aLj), iT.fillStyle = a4u) : aLk >> 1 & 1 ? (iT.lineWidth = .05 * fontSize, iT.strokeStyle = aLn(fontSize, aLk % 2), iT.strokeText(aLu, aLi, aLj)) : (
 			1 < aLk && (iT.lineWidth = .12 * fontSize, iT.strokeStyle = aLn(fontSize, aLk), iT.strokeText(aLu, aLi, aLj)), iT.fillText(aLu, aLi, aLj)), drawPlayerStats()
