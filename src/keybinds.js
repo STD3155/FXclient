@@ -28,11 +28,12 @@ const maxCount = 6;
 export const mobileKeybinds = {
     setSize: (w, h, mainCanvas) => {
         if (getSettings().keybindButtons !== true) return;
+        if (canvas && width === w && height === h) return;
         width = w;
         height = h;
 
         // redraw
-        canvas = document.createElement("canvas");
+        if (!canvas) canvas = document.createElement("canvas");
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext("2d");
@@ -53,7 +54,7 @@ export const mobileKeybinds = {
         });
     },
     click: (xRelative) => {
-        if (xRelative < 0 || xRelative > width) return false;
+        if (width <= 0 || xRelative < 0 || xRelative > width) return false;
         const keybinds = getSettings().attackPercentageKeybinds;
         const index = Math.floor(xRelative / width * maxCount);
         if (index >= keybinds.length) return false;
@@ -61,6 +62,7 @@ export const mobileKeybinds = {
         return true;
     },
     draw: (mainCanvas, x, y) => {
+        if (!canvas) return;
         mainCanvas.drawImage(canvas, x, y - (height + getUIGap() / 4));
     }
 }

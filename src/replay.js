@@ -54,7 +54,9 @@ const replay = {
     frame() {
         if (this.seekTarget === null) return false;
         const hooks = this.hooks;
-        const deadline = performance.now() + 40;
+        // Keep replay seeking cooperative so input and rendering get a chance
+        // to run between simulation batches.
+        const deadline = performance.now() + 12;
         while (this.tick < this.seekTarget && !hooks.isEnded() && performance.now() < deadline)
             hooks.advance();
         hooks.finishTick();

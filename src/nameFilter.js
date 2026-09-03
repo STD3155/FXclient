@@ -3,13 +3,18 @@ import { getSettings } from "./settings.js";
 
 const PLACEHOLDER_NAME = "Hidden Name";
 
-const matcher = new RegExpMatcher({
-    ...englishDataset.build(),
-    ...englishRecommendedTransformers
-});
+let matcher = null;
+
+function getMatcher() {
+    if (matcher === null) matcher = new RegExpMatcher({
+        ...englishDataset.build(),
+        ...englishRecommendedTransformers
+    });
+    return matcher;
+}
 
 function isInappropriate(name) {
-    return matcher.hasMatch(name);
+    return getMatcher().hasMatch(name);
 }
 
 function filter(name) {

@@ -6,21 +6,28 @@ import WindowManager from "./windowManager.js";
 const playerList = new (function () {
     const playersIcon = document.createElement('img');
     playersIcon.setAttribute('src', 'assets/players_icon.png');
-    document.getElementById("playerlist_content").addEventListener("click", event => {
-        const playerId = event.target.closest("tr[data-player-id]")?.getAttribute("data-player-id");
-        if (!playerId) return;
-        if (getVar("gIsTeamGame")) WindowManager.closeWindow("playerList"), donationsTracker.displayHistory(playerId);
-    });
+    const content = document.getElementById("playerlist_content");
+    function activatePlayer(event) {
+        if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") return;
+        const row = event.target.closest("tr[data-player-id]");
+        if (!row || !getVar("gIsTeamGame")) return;
+        if (event.type === "keydown") event.preventDefault();
+        WindowManager.closeWindow("playerList");
+        donationsTracker.displayHistory(Number(row.dataset.playerId));
+    }
+    content.addEventListener("click", activatePlayer);
+    content.addEventListener("keydown", activatePlayer);
     this.display = function displayPlayerList(playerNames) {
         const gHumans = getVar("gHumans");
         const gLobbyMaxJoin = getVar("gLobbyMaxJoin");
-        let listContent = `<h3>Players (${gHumans})</h3>`;
+        const isTeamGame = getVar("gIsTeamGame");
+        const rows = [`<tr class="player-list-section"><th>Players (${gHumans})</th></tr>`];
         for (let i = 0; i < gLobbyMaxJoin; i++) {
-            if (i === gHumans) listContent += `<h3>Bots (${gLobbyMaxJoin - gHumans})</h3>`;
-            listContent += `<tr data-player-id="${i}"><td><span class="color-light-gray">${i + 1}.</span> ${escapeHtml(playerNames[i])}</td></tr>`
+            if (i === gHumans) rows.push(`<tr class="player-list-section"><th>Bots (${gLobbyMaxJoin - gHumans})</th></tr>`);
+            rows.push(`<tr data-player-id="${i}"${isTeamGame ? ' tabindex="0"' : ""}><td><span class="color-light-gray">${i + 1}.</span> ${escapeHtml(playerNames[i])}</td></tr>`);
         }
-        document.getElementById("playerlist_content").innerHTML = listContent;
-        document.getElementById("playerlist_content").setAttribute("class", getVar("gIsTeamGame") ? "clickable" : "");
+        content.innerHTML = rows.join("");
+        content.className = isTeamGame ? "clickable" : "";
         WindowManager.openWindow("playerList");
     }
     this.hoveringOverButton = false;

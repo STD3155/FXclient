@@ -10,7 +10,7 @@ import { FollowedAccountNicknames } from './followedAccounts.js';
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
 
-var settings = {
+const defaultSettings = {
   //"showBotDonations": false,
   displayWinCounter: true,
   displayTickNumber: true,
@@ -48,6 +48,37 @@ var settings = {
   hideInappropriateNames: false,
   followedAccountNicknames: {}
 };
+
+function normalizeSettings(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new TypeError("Settings must be a JSON object");
+  const normalized = {};
+  Object.entries(defaultSettings).forEach(([key, defaultValue]) => {
+    const candidate = value[key];
+    if (Array.isArray(defaultValue))
+      normalized[key] = Array.isArray(candidate) ? candidate : defaultValue.slice();
+    else if (defaultValue !== null && typeof defaultValue === "object")
+      normalized[key] = candidate !== null && typeof candidate === "object" && !Array.isArray(candidate)
+        ? candidate : { ...defaultValue };
+    else
+      normalized[key] = typeof candidate === typeof defaultValue ? candidate : defaultValue;
+  });
+  // Keep these two legacy keys until the migration below has run once.
+  if (Array.isArray(value.emojiBar)) normalized.emojiBar = value.emojiBar;
+  if (typeof value.customEmojiBar === "boolean") normalized.customEmojiBar = value.customEmojiBar;
+  return normalized;
+}
+
+let settings = { ...defaultSettings };
+const storedSettings = localStorage.getItem("fx_settings");
+if (storedSettings !== null) {
+  try {
+    settings = normalizeSettings(JSON.parse(storedSettings));
+  } catch (error) {
+    console.warn("Ignoring invalid saved settings:", error);
+    localStorage.removeItem("fx_settings");
+  }
+}
 __fx.settings = settings;
 const discontinuedSettings = ["hideAllLinks", "fontName"];
 __fx.makeMainMenuTransparent = false;
@@ -568,10 +599,14 @@ const settingsManager = new (function () {
     }
   ];
   const settingsContainer = document.querySelector(".settings .scrollable");
-  var inputFields = {}; // (includes select menus)
-  var checkboxFields = {};
-  var customElements = [];
-  settingsStructure.forEach((item) => {
+  const inputFields = {}; // (includes select menus)
+  const checkboxFields = {};
+  const customElements = [];
+  let settingsUiBuilt = false;
+  function buildSettingsUi() {
+    if (settingsUiBuilt) return;
+    settingsUiBuilt = true;
+    settingsStructure.forEach((item) => {
     if (typeof item === "function") {
       const container = document.createElement("div");
       customElements.push(new item(container));
@@ -616,8 +651,10 @@ const settingsManager = new (function () {
       checkboxFields[item.for] = element;
     } else label.append(document.createElement("br"));
     settingsContainer.append(label, document.createElement("br"));
-  });
+    });
+  }
   this.save = function () {
+    buildSettingsUi();
     Object.keys(inputFields).forEach(function (key) {
       settings[key] = inputFields[key].value.trim();
     });
@@ -640,21 +677,17 @@ const settingsManager = new (function () {
     const selectedFile = input.files[0];
     if (!selectedFile) return;
 
-    input.removeEventListener("change", handleFileSelect);
+    input.onchange = null;
     input.value = "";
-    if (!selectedFile.name.endsWith(".json"))
+    if (!selectedFile.name.toLowerCase().endsWith(".json"))
       return alert("Invalid file format");
     const fileReader = new FileReader();
     fileReader.onload = function () {
       let result;
       try {
         result = JSON.parse(fileReader.result);
-        if (
-          confirm(
-            'Warning: This will override all current settings, click "OK" to confirm'
-          )
-        )
-          __fx.settings = settings = result;
+        if (!confirm('Warning: This will override all current settings, click "OK" to confirm')) return;
+        __fx.settings = settings = normalizeSettings(result);
         localStorage.setItem("fx_settings", JSON.stringify(settings));
         window.location.reload();
       } catch (error) {
@@ -664,8 +697,8 @@ const settingsManager = new (function () {
     fileReader.readAsText(selectedFile);
   }
   this.importFromFile = function () {
+    fileInput.onchange = handleFileSelect;
     fileInput.click();
-    fileInput.addEventListener("change", handleFileSelect);
   };
   this.exportToFile = function () {
     saveFile(
@@ -676,6 +709,7 @@ const settingsManager = new (function () {
   };
 
   this.syncFields = function () {
+    buildSettingsUi();
     Object.keys(inputFields).forEach(function (key) {
       inputFields[key].value = settings[key];
     });
@@ -740,13 +774,6 @@ WindowManager.add({
     settingsManager.syncFields();
   },
 });
-
-if (localStorage.getItem("fx_settings") !== null) {
-  __fx.settings = settings = {
-    ...settings,
-    ...JSON.parse(localStorage.getItem("fx_settings")),
-  };
-}
 
 // migrate old emoji settings to new
 if (settings.emojiBar !== undefined || settings.customEmojiBar !== undefined) {

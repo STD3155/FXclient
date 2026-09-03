@@ -43,8 +43,9 @@ export default definePatch(({ insertCode, modifyCode, replaceCode }) => {
   insertCode(
     `window.removeEventListener("error", err);
     msg = e.lineno + " " + e.colno + "|" + stack; /* here */`,
-    `__fx.reportError(e, msg);
-    return alert("Error:\\n" + e.filename + " " + e.lineno + " " + e.colno + " " + e.message);`
+    `if (__fx.reportError(e, msg))
+      alert("Error:\\n" + e.filename + " " + e.lineno + " " + e.colno + " " + e.message);
+    return;`
   )
 
   // use textContent so that usernames dont get parsed that contain html code

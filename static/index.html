@@ -17,7 +17,7 @@
   <meta name="keywords"
     content="territorial.io,territory games,territorial io,map games,conquest games,conquest game,david tschacher,territorial,territory game,io game,io games,territory.io,territory io,territory games io">
   <meta name="author" content="MohsenEMX, peshomir,orlemley1, David Tschacher">
-  <meta name="viewport" content="width=device-width, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <link rel="manifest" href="manifest.json" />
 
@@ -60,17 +60,19 @@
     // adapted from https://stackoverflow.com/a/44593894 and https://stackoverflow.com/a/40446448
 
     function showUpdatePrompt(/** @type {ServiceWorker} */ sw) {
-      console.log("showing update prompt")
       document.getElementById("updateNotification").style.display = "block";
-      document.getElementById("swUpdateButton").addEventListener("click", () => {
+      document.getElementById("swUpdateButton").onclick = () => {
         sw.postMessage({ update: true });
-      })
+      };
     }
 
     document.addEventListener("DOMContentLoaded", function () {
       if (!("serviceWorker" in navigator)) return;
+      const controlledAtLoad = Boolean(navigator.serviceWorker.controller);
+      let refreshing = false;
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        console.log("Controlling service worker changed, refreshing page");
+        if (!controlledAtLoad || refreshing) return;
+        refreshing = true;
         window.location.reload();
       });
 
@@ -90,14 +92,14 @@
         if (registration.installing) handleInstalling();
         // otherwise, listen for new workers arriving
         registration.addEventListener('updatefound', handleInstalling);
-      });
+      }).catch((error) => console.warn("Service worker registration failed:", error));
     });
   </script>
 </head>
 
 <body onload="aiCommand746(0);">
   <canvas id="canvasA" width="128" height="128"></canvas>
-  <span id="windowContainer">
+  <div id="windowContainer">
     <div class="window flex-column settings" style="display:none">
       <h1>Settings</h1>
       <div class="scrollable"></div>
@@ -108,24 +110,6 @@
         <button onclick="__fx.settingsManager.importFromFile()">Import</button>
         <button onclick="__fx.settingsManager.exportToFile()">Export</button>
       </footer>
-    </div>
-    <div class="window flex-column" id="customLobbyJoinMenu" style="display: none">
-      <input type="text" id="lobbyCode" placeholder="Enter lobby code">
-      or
-      <div>
-        <button id="createLobbyButton">Create new lobby</button>
-        <label for="region">in region:</label>
-        <select id="customLobbyRegion" name="region"
-        title="Note: Region selection is a best effort, not a guarantee. The regions listed are only a subset of all the possible locations where a lobby can be created.">
-          <option value="default" selected>Automatic (closest to you)</option>
-          <option value="wnam">Western North America</option>
-          <option value="enam">Eastern North America</option>
-          <option value="weur">Western Europe</option>
-          <option value="eeur">Eastern Europe</option>
-          <option value="apac">Asia-Pacific</option>
-          <option value="oc">Oceania</option>
-        </select>
-      </div>
     </div>
     <div class="window scrollable selectable" id="playerlist" style="display: none;">
       <h1>Player List</h1>
@@ -145,7 +129,7 @@
       <button id="swUpdateButton">Update</button>
       <button onclick="document.getElementById('updateNotification').style.display = 'none'">Dismiss</button>
     </div>
-  </span>
+  </div>
   <script src="variables.js?buildTimestamp"></script>
   <script src="fx.bundle.js?buildTimestamp"></script>
   <script src="game.js?buildTimestamp"></script>

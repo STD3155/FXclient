@@ -3,6 +3,8 @@ import { getSettings } from "./settings.js";
 const mentionExpression = /\B@[-\w\[\]]+/g;
 const chatMessageId = 0;
 const everyoneAliases = ["@0ya", "@0og", "@0pl"];
+let cachedLanguageCodes = null;
+let cachedLanguageCodeSet = null;
 
 const settingForType = {
     everyone: "mutePingEveryone",
@@ -14,7 +16,12 @@ const settingForType = {
 
 function getLanguageCodes() {
     const codes = window[dictionary.languageHolder]?.[dictionary.languageData]?.[dictionary.languageCodes];
-    return Array.isArray(codes) ? codes : null;
+    if (!Array.isArray(codes)) return null;
+    if (codes !== cachedLanguageCodes) {
+        cachedLanguageCodes = codes;
+        cachedLanguageCodeSet = new Set(codes.map(code => code.toLowerCase()));
+    }
+    return cachedLanguageCodeSet;
 }
 
 function getMentionType(mention) {
@@ -24,7 +31,7 @@ function getMentionType(mention) {
     const name = mention.slice(1);
     const languageCodes = getLanguageCodes();
     if (languageCodes !== null)
-        return languageCodes.some(code => code.toLowerCase() === name) ? "language"
+        return languageCodes.has(name) ? "language"
             : name.length === 5 ? "direct" : "other";
     return name.length === 5 ? "direct" : name.length <= 3 ? "language" : "other";
 }

@@ -1,5 +1,9 @@
 import { getVar } from "./gameInterface.js";
 
+let cachedRawNames = null;
+let cachedHumanCount = -1;
+let parsedClans = [];
+
 export const leaderboardFilter = new (function() {
     //this.playersToInclude = [0,1,8,20,24,30,32,42,50,69,200,400,500,510,511]; // for testing
     this.playersToInclude = [];
@@ -22,33 +26,47 @@ export const leaderboardFilter = new (function() {
     this.showingRivals = false;
 
     this.rivalsData = [];
-    this.computeRivals = () => {
+    this.ownClanIndex = -1;
+    let lastRivalsCompute = 0;
+    const clanTotals = new Map();
+
+    const refreshClanCache = (force = false) => {
         const rawNames = getVar("rawPlayerNames");
-        const playerTerritories = getVar("playerTerritories");
         const gHumans = getVar("gHumans");
-        const totals = new Map();
+        if (!force && rawNames === cachedRawNames && gHumans === cachedHumanCount) return;
+        cachedRawNames = rawNames;
+        cachedHumanCount = gHumans;
+        parsedClans = new Array(gHumans);
+        for (let id = 0; id < gHumans; id++) parsedClans[id] = this.parseClanFromPlayerName(rawNames[id]);
+    };
+
+    this.computeRivals = (force = false) => {
+        const now = performance.now();
+        if (!force && now - lastRivalsCompute < 100) return;
+        lastRivalsCompute = now;
+        refreshClanCache();
+        const playerTerritories = getVar("playerTerritories");
+        const gHumans = cachedHumanCount;
+        clanTotals.clear();
         for (let id = 0; id < gHumans; id++) {
-            const clan = this.parseClanFromPlayerName(rawNames[id]);
+            const clan = parsedClans[id];
             if (clan === null) continue;
             const territory = playerTerritories[id] || 0;
-            const entry = totals.get(clan) || { territory: 0, representativeId: id, representativeTerritory: -1 };
+            const entry = clanTotals.get(clan) || { territory: 0, representativeId: id, representativeTerritory: -1 };
             entry.territory += territory;
             if (territory > entry.representativeTerritory) {
                 entry.representativeTerritory = territory;
                 entry.representativeId = id;
             }
-            totals.set(clan, entry);
+            clanTotals.set(clan, entry);
         }
-        this.rivalsData = Array.from(totals.entries())
+        this.rivalsData = Array.from(clanTotals.entries())
             .map(([clan, data]) => ({ clan, territory: data.territory, representativeId: data.representativeId }))
             .sort((a, b) => b.territory - a.territory);
+        const ownClan = parsedClans[getVar("playerId")];
+        this.ownClanIndex = ownClan == null ? -1 : this.rivalsData.findIndex((entry) => entry.clan === ownClan);
     };
-    this.getOwnClanIndex = () => {
-        const playerId = getVar("playerId");
-        const ownClan = this.parseClanFromPlayerName(getVar("rawPlayerNames")[playerId]);
-        if (ownClan === null) return -1;
-        return this.rivalsData.findIndex((entry) => entry.clan === ownClan);
-    };
+    this.getOwnClanIndex = () => this.ownClanIndex;
 
     this.drawTabs = function(canvas, totalWidth, verticalOffset, colorForSelectedTab) {
         canvas.textBaseline = "middle";
@@ -100,7 +118,7 @@ export const leaderboardFilter = new (function() {
             } else if (this.selectedTab === 2) {
                 this.enabled = false;
                 this.showingRivals = true;
-                this.computeRivals();
+                this.computeRivals(true);
             }
             this.scrollToTop();
             this.repaintLeaderboard();
@@ -109,11 +127,11 @@ export const leaderboardFilter = new (function() {
     };
     this.filterByOwnClan = () => {
         this.playersToInclude = [];
+        refreshClanCache();
         const playerId = getVar("playerId");
-        const ownClan = this.parseClanFromPlayerName(getVar("rawPlayerNames")[playerId]);
-        getVar("rawPlayerNames").forEach((name, id) => {
-            if (id === playerId || this.parseClanFromPlayerName(name) === ownClan) this.playersToInclude.push(id);
-        });
+        const ownClan = parsedClans[playerId];
+        for (let id = 0; id < cachedHumanCount; id++)
+            if (id === playerId || parsedClans[id] === ownClan) this.playersToInclude.push(id);
         this.enabled = true;
         this.scrollToTop();
     };
@@ -122,6 +140,11 @@ export const leaderboardFilter = new (function() {
         this.enabled = false;
         this.showingRivals = false;
         this.selectedTab = 0;
+        this.ownClanIndex = -1;
+        lastRivalsCompute = 0;
+        cachedRawNames = null;
+        cachedHumanCount = -1;
+        parsedClans = [];
         clanFilter.refresh();
     }
 });
@@ -130,11 +153,16 @@ export const clanFilter = new (function() {
     this.inOwnClan = new Array(512);
     this.inOwnClan.fill(false);
     this.refresh = () => {
+        cachedRawNames = null;
         const gHumans = getVar("gHumans");
-        const ownClan = leaderboardFilter.parseClanFromPlayerName(getVar("rawPlayerNames")[getVar("playerId")]);
-        if (ownClan === null) this.inOwnClan.fill(false);
-        else getVar("rawPlayerNames").forEach((name, id) => {
-            this.inOwnClan[id] = id < gHumans && leaderboardFilter.parseClanFromPlayerName(name) === ownClan;
-        });
+        const rawNames = getVar("rawPlayerNames");
+        cachedRawNames = rawNames;
+        cachedHumanCount = gHumans;
+        parsedClans = new Array(gHumans);
+        for (let id = 0; id < gHumans; id++) parsedClans[id] = leaderboardFilter.parseClanFromPlayerName(rawNames[id]);
+        const ownClan = parsedClans[getVar("playerId")];
+        this.inOwnClan.fill(false);
+        if (ownClan != null)
+            for (let id = 0; id < gHumans; id++) this.inOwnClan[id] = parsedClans[id] === ownClan;
     }
 });
