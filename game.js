@@ -42,8 +42,8 @@ function a() {
 				for (var match, a6 = new RegExp(":([0-9]+):([0-9]+)", "g"), result = []; null !== (match = a6.exec(stack));) result.push(parseInt(match[1], 10)), result.push(parseInt(match[2], 10));
 				return result.length ? result.join(" ") : 0
 			}(e);
-			return 0 === f || e.lineno < 2 ? void console.log("Error: External Code") : (window.removeEventListener("error", d), c = e.lineno + " " + e.colno + "|" + f, __fx.reportError(e, c), alert("Error:\n" + e.filename + " " + e.lineno +
-				" " + e.colno + " " + e.message))
+			return 0 === f || e.lineno < 2 ? void console.log("Error: External Code") : (window.removeEventListener("error", d), c = e.lineno + " " + e.colno + "|" + f, void(__fx.reportError(e, c) && alert("Error:\n" + e.filename + " " + e
+				.lineno + " " + e.colno + " " + e.message)))
 		} catch (e) {
 			c = "SE|" + c + "|" + e, console.log(c), alert(c)
 		}

@@ -30,7 +30,6 @@
 	font-size       : 20px;
 	font-size       : calc(13px + ((0.5 * (1.1vw - 0.1vh)) + 0.14rem));
 	max-height      : 90%;
-	transition      : 0.2s;
 	z-index         : 10;
 }
 
@@ -42,7 +41,7 @@
 	font-size       : 20px;
 	font-size       : 0.9em;
 	padding         : 0.4rem;
-	transition      : 0.2s;
+	transition      : background-color 0.2s, border-radius 0.2s, border-color 0.2s;
 	border          : 1px solid #fff;
 	border-radius   : 5px;
 	margin          : 5px;
@@ -157,7 +156,6 @@ h1 {
 	font-weight       : normal;
 	margin-block-start: 0.5em;
 	margin-block-end  : 0.5em;
-	transition        : 0.2s;
 }
 #playerlist h1 {
 	margin-block-start: 0.3em;
@@ -172,7 +170,12 @@ h3 {
 canvas,
 input,
 textarea {
-	transition: 0.2s;
+	transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.window :focus-visible {
+	outline: 3px solid #8fd3ff;
+	outline-offset: 2px;
 }
 
 .window button:hover {
@@ -191,6 +194,8 @@ td {
 
 #playerlist_content.clickable td { cursor: pointer; }
 #playerlist_content.clickable td:hover { background-color: #00ff0040; }
+#playerlist_content.clickable tr:focus-visible td { background-color: #00ff0040; }
+.player-list-section th { padding-top: 0.6em; text-align: left; font-weight: normal; }
 
 tr.new {
 	animation: flashAnimation 0.4s ease-out;
@@ -211,7 +216,7 @@ table {
 
 input#userna,
 input#inputfilebtn {
-	transition: 0.2s
+	transition: background-color 0.2s, border-color 0.2s
 }
 
 .selectable {
@@ -322,7 +327,7 @@ label.checkbox .checkmark:after {
 	align-items     : center;
 	gap             : 10px;
 	user-select     : none;
-	transition      : 0.2s;
+	transition      : background-color 0.2s, border-color 0.2s, opacity 0.2s;
 	z-index         : 9;
 }
 
@@ -331,6 +336,19 @@ label.checkbox .checkmark:after {
 #replayTimebar .replay-track {
 	position: relative; flex: 1; height: 14px; cursor: pointer; touch-action: none;
 	background-color: rgb(255 255 255 / 70%);
+}
+
+@media (pointer: coarse) {
+	.window button, .window input, .window select { min-height: 44px; }
+	#replayTimebar .replay-track { height: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
 }
 #replayTimebar .replay-track:hover { background-color: #ccc; }
 
