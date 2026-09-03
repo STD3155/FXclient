@@ -4,23 +4,34 @@ import ModUtils, { insert } from "../modUtils.js"
 
 export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, matchCode, replaceOne, safeDictionary }) => {
 
-  // Capture the exact helpers used by the game to calculate interest. The
-  // calculation is inserted directly into rendering, so it is available even
-  // before the first interest tick.
-  const { integerDivisionObject, integerDivision, interestManager, getInterestIncome } = matchCode(`
-    var interestIncome = integerDivisionObject.integerDivision(interestManager.getInterestIncome(player) * playerBalances[player], 10000);
-    balanceManagerObject.balanceManager.addBalance(player, Math.max(interestIncome, 1));`, { dictionary: {
-      playerBalances: safeDictionary.playerBalances,
-    } })
-
-  const { placeBalanceAbove } = matchCode(`aLT += Math.floor(0.78 * fontSize);
-    if (placeBalanceAbove) {/*...*/}`)
   const { Util, numberFormatter, formatNumber } = matchCode(`
     var balanceText = Util.numberFormatter.formatNumber(playerData.playerBalances[player] - outgoingBalance);`,
     { dictionary: {
       playerData: safeDictionary.playerData,
       playerBalances: safeDictionary.playerBalances,
     } })
+
+  // Reuse the interest income the game has already calculated and cache the
+  // formatted growth text for humans only. Rendering then only draws the text.
+  modifyCode(`
+    var interestIncome = integerDivisionObject.integerDivision(interestManager.getInterestIncome(player) * playerBalances[player], 10000);
+    ${insert(`if (__fx.utils.isHumanPlayer(player)) {
+      var growthValues = __fx.utils.playerGrowth || (__fx.utils.playerGrowth = []);
+      growthValues[player] = "+" + Util.numberFormatter.formatNumber(
+        Math.max(interestIncome, 1) + playerData.playerTerritories[player] / 10
+      );
+    }`)}
+    balanceManagerObject.balanceManager.addBalance(player, Math.max(interestIncome, 1));`, { dictionary: {
+      playerBalances: safeDictionary.playerBalances,
+      playerData: safeDictionary.playerData,
+      playerTerritories: safeDictionary.playerTerritories,
+      Util,
+      numberFormatter,
+      formatNumber,
+    } })
+
+  const { placeBalanceAbove } = matchCode(`aLT += Math.floor(0.78 * fontSize);
+    if (placeBalanceAbove) {/*...*/}`)
 
   // Balance rendering; Renders density when the "Reverse Name/Balance" setting is off (default)
   modifyCode(
@@ -32,12 +43,10 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
       var statsLine = 1;
       if (!placeBalanceAbove && __fx.settings.showPlayerDensity)
         __fx.settings.coloredDensity && (ctx.fillStyle = __fx.utils.textStyleBasedOnDensity(i)), ctx.fillText(__fx.utils.getDensity(i), x, y + fontSize * statsLine++);
-      if (!placeBalanceAbove && __fx.settings.showPlayerGrowth) {
+      if (!placeBalanceAbove && __fx.settings.showPlayerGrowth
+          && __fx.utils.playerGrowth && __fx.utils.playerGrowth[i] !== undefined) {
         ctx.fillStyle = statsColor;
-        var growth = Math.max(1, integerDivisionObject.integerDivision(
-          interestManager.getInterestIncome(i) * playerData.playerBalances[i], 10000
-        )) + playerData.playerTerritories[i] / 10;
-        ctx.fillText("+" + Util.s1.formatNumber(growth), x, y + fontSize * statsLine);
+        ctx.fillText(__fx.utils.playerGrowth[i], x, y + fontSize * statsLine);
       }
     }`)}
     if (a4f) {
@@ -65,10 +74,6 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
   }`,
     { dictionary: {
       placeBalanceAbove,
-      integerDivisionObject,
-      integerDivision,
-      interestManager,
-      getInterestIncome,
       playerData: safeDictionary.playerData,
       playerBalances: safeDictionary.playerBalances,
       playerTerritories: safeDictionary.playerTerritories,
@@ -90,12 +95,10 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
           $<canvas>.fillText(__fx.utils.getDensity(___id), $<x>, ___statsY);
           ___statsY += $<fontSize>;
         }
-        if (${placeBalanceAbove} && __fx.settings.showPlayerGrowth) {
+        if (${placeBalanceAbove} && __fx.settings.showPlayerGrowth
+            && __fx.utils.playerGrowth && __fx.utils.playerGrowth[___id] !== undefined) {
           $<canvas>.fillStyle = ___statsColor;
-          var ___growth = Math.max(1, ${integerDivisionObject}.${integerDivision}(
-            ${interestManager}.${getInterestIncome}(___id) * ${safeDictionary.playerData}.${safeDictionary.playerBalances}[___id], 1e4
-          )) + ${safeDictionary.playerData}.${safeDictionary.playerTerritories}[___id] / 10;
-          $<canvas>.fillText("+" + ${Util}.${numberFormatter}.${formatNumber}(___growth), $<x>, ___statsY);
+          $<canvas>.fillText(__fx.utils.playerGrowth[___id], $<x>, ___statsY);
         } }`,
     )
   })

@@ -13,6 +13,9 @@ function getDensity(playerID, playerBalances = getVar("playerBalances"), playerT
 function isPointInRectangle(x, y, rectangleStartX, rectangleStartY, width, height) {
     return x >= rectangleStartX && x <= rectangleStartX + width && y >= rectangleStartY && y <= rectangleStartY + height;
 };
+function isHumanPlayer(playerID) {
+    return playerID < getVar("gHumans");
+}
 /** @param {CanvasRenderingContext2D} canvas @param {string} text */
 function fillTextMultiline(canvas, text, x, y, maxWidth) {
     const lineHeight = parseInt(canvas.font.split(" ").find(part => part.endsWith("px")).slice(0, -2));
@@ -103,4 +106,4 @@ function getDuplicateIpHighlightColor(player, entries, ipField) {
     return getIpColors(entries, ipField).get(ip) || null;
 }
 
-export default { getMaxTroops, getDensity, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor }
+export default { getMaxTroops, getDensity, isHumanPlayer, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor }
