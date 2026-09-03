@@ -42,14 +42,17 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
           && fontSize < 9 * (__fx.hoveringTooltip.canvasPixelScale || 1)) return;
       var statsColor = ctx.fillStyle;
       var statsLine = 1;
-      if (!placeBalanceAbove && __fx.settings.showPlayerDensity) {
+      var statsMode = __fx.settings.playerStatsMode;
+      var showDensity = statsMode === "both" || statsMode === "density";
+      var showGrowth = statsMode === "both" || statsMode === "growth";
+      if (!placeBalanceAbove && showDensity) {
         var densityStats = __fx.utils.getDensityStats(
           i, playerData.playerBalances, playerData.playerTerritories, __fx.settings.densityDisplayStyle
         );
         __fx.settings.coloredDensity && (ctx.fillStyle = densityStats.color);
         ctx.fillText(densityStats.text, x, y + fontSize * statsLine++);
       }
-      if (!placeBalanceAbove && __fx.settings.showPlayerGrowth
+      if (!placeBalanceAbove && showGrowth
           && __fx.utils.playerGrowth && __fx.utils.playerGrowth[i] !== undefined) {
         ctx.fillStyle = statsColor;
         var growthText = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []);
@@ -103,7 +106,10 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
         var ___statsColor = $<canvas>.fillStyle;
         var ___showStats = !__fx.settings.adaptivePlayerStats
           || $<fontSize> >= 9 * (__fx.hoveringTooltip.canvasPixelScale || 1);
-        if (___showStats && ${placeBalanceAbove} && __fx.settings.showPlayerDensity) {
+        var ___statsMode = __fx.settings.playerStatsMode;
+        var ___showDensity = ___statsMode === "both" || ___statsMode === "density";
+        var ___showGrowth = ___statsMode === "both" || ___statsMode === "growth";
+        if (___showStats && ${placeBalanceAbove} && ___showDensity) {
           var ___densityStats = __fx.utils.getDensityStats(
             ___id,
             $<playerData>.${safeDictionary.playerBalances},
@@ -114,7 +120,7 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
           $<canvas>.fillText(___densityStats.text, $<x>, ___statsY);
           ___statsY += $<fontSize>;
         }
-        if (___showStats && ${placeBalanceAbove} && __fx.settings.showPlayerGrowth
+        if (___showStats && ${placeBalanceAbove} && ___showGrowth
             && __fx.utils.playerGrowth && __fx.utils.playerGrowth[___id] !== undefined) {
           $<canvas>.fillStyle = ___statsColor;
           var ___growthText = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []);

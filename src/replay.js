@@ -87,8 +87,43 @@ const track = createElement("div", "replay-track", bar);
 const totalTime = createElement("span", "replay-time color-light-gray", bar);
 const fill = createElement("div", "replay-fill", track);
 const marker = createElement("div", "replay-target d-none", track);
+const playButton = createElement("button", "replay-control", bar);
+const rewindButton = createElement("button", "replay-control", bar);
+const forwardButton = createElement("button", "replay-control", bar);
+playButton.type = rewindButton.type = forwardButton.type = "button";
+playButton.textContent = "▶";
+playButton.title = "Play or pause (Space)";
+playButton.setAttribute("aria-label", "Play or pause replay");
+rewindButton.textContent = "−10s";
+rewindButton.title = "Jump back 10 seconds (Left arrow)";
+forwardButton.textContent = "+10s";
+forwardButton.title = "Jump forward 10 seconds (Right arrow)";
+bar.prepend(playButton, rewindButton);
 
 let drag = null;
+
+function jumpBy(seconds) {
+    if (!replay.isWatching()) return;
+    const tickDuration = replay.getTickDuration();
+    if (!tickDuration) return;
+    replay.seek(replay.tick + seconds * 1000 / tickDuration);
+}
+
+playButton.addEventListener("click", () => replay.togglePlayPause());
+rewindButton.addEventListener("click", () => jumpBy(-10));
+forwardButton.addEventListener("click", () => jumpBy(10));
+
+document.addEventListener("keydown", (event) => {
+    if (!replay.isWatching() || event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName))) return;
+    if (event.key === " ") replay.togglePlayPause();
+    else if (event.key === "ArrowLeft") jumpBy(-10);
+    else if (event.key === "ArrowRight") jumpBy(10);
+    else return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+});
 
 const trackFraction = (event) => {
     const rect = track.getBoundingClientRect();
@@ -127,6 +162,7 @@ let lastMarker = "";
 let lastSeeking = false;
 let lastCurrentTime = "";
 let lastTotalTime = "";
+let lastPlaying = null;
 
 function startBarUpdates() {
     if (barAnimationFrame === null) barAnimationFrame = requestAnimationFrame(updateBar);
@@ -172,6 +208,12 @@ function updateBar() {
     const nextTotalTime = formatTime(total * tickDuration);
     if (nextCurrentTime !== lastCurrentTime) currentTime.textContent = lastCurrentTime = nextCurrentTime;
     if (nextTotalTime !== lastTotalTime) totalTime.textContent = lastTotalTime = nextTotalTime;
+    const playing = Boolean(replay.controls?.fxIsPlaying());
+    if (playing !== lastPlaying) {
+        lastPlaying = playing;
+        playButton.textContent = playing ? "⏸" : "▶";
+        playButton.setAttribute("aria-label", playing ? "Pause replay" : "Play replay");
+    }
     startBarUpdates();
 }
 startBarUpdates();

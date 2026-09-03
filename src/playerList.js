@@ -7,6 +7,13 @@ const playerList = new (function () {
     const playersIcon = document.createElement('img');
     playersIcon.setAttribute('src', 'assets/players_icon.png');
     const content = document.getElementById("playerlist_content");
+    const search = document.getElementById("playerlist_search");
+    search.addEventListener("input", () => {
+        const query = search.value.trim().toLowerCase();
+        content.querySelectorAll("tr[data-player-id]").forEach((row) => {
+            row.classList.toggle("d-none", Boolean(query) && !row.textContent.toLowerCase().includes(query));
+        });
+    });
     function activatePlayer(event) {
         if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") return;
         const row = event.target.closest("tr[data-player-id]");
@@ -21,6 +28,7 @@ const playerList = new (function () {
         const gHumans = getVar("gHumans");
         const gLobbyMaxJoin = getVar("gLobbyMaxJoin");
         const isTeamGame = getVar("gIsTeamGame");
+        search.value = "";
         const rows = [`<tr class="player-list-section"><th>Players (${gHumans})</th></tr>`];
         for (let i = 0; i < gLobbyMaxJoin; i++) {
             if (i === gHumans) rows.push(`<tr class="player-list-section"><th>Bots (${gLobbyMaxJoin - gHumans})</th></tr>`);

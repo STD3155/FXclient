@@ -27,8 +27,48 @@ WindowManager.add({
 const donationsTracker = new (function () {
   this.openedWindowPlayerID = null
   this.contentElement = document.querySelector("#donationhistory_content")
+  const filterElement = document.getElementById("donationhistory_filter")
+  const summaryElement = document.getElementById("donationhistory_summary")
   this.donationHistory = Array(512)
   let resetCalled = false
+  let displayedHistory = []
+  let displayedPlayerID = null
+
+  function matchesFilter(item, playerID) {
+    return filterElement.value === "all"
+      || (filterElement.value === "received" && playerID === item[1])
+      || (filterElement.value === "sent" && playerID === item[0])
+  }
+
+  function updateSummary(history, playerID) {
+    let sent = 0, received = 0
+    history.forEach((item) => {
+      if (playerID === item[1]) received += Number(item[2]) || 0
+      else sent += Number(item[2]) || 0
+    })
+    summaryElement.textContent = `Received ${received.toLocaleString()} · Sent ${sent.toLocaleString()}`
+  }
+
+  const renderDisplayedHistory = () => {
+    this.contentElement.innerHTML = ""
+    const matchingEntries = []
+    for (let index = 0; index < displayedHistory.length && matchingEntries.length < MAX_RENDERED_ROWS; index++) {
+      const item = displayedHistory[index]
+      if (matchesFilter(item, displayedPlayerID)) matchingEntries.push([item, displayedHistory.length - index])
+    }
+    if (!matchingEntries.length) {
+      this.contentElement.innerText = "Nothing to display"
+      updateSummary(displayedHistory, displayedPlayerID)
+      return
+    }
+    const fragment = document.createDocumentFragment()
+    matchingEntries.forEach(([historyItem, originalIndex]) => {
+      fragment.append(generateTableRowItem(historyItem, originalIndex, displayedPlayerID))
+    })
+    this.contentElement.append(fragment)
+    updateSummary(displayedHistory, displayedPlayerID)
+  }
+  filterElement.addEventListener("change", renderDisplayedHistory)
 
   this.reset = function () {
     resetCalled = true
@@ -51,13 +91,17 @@ const donationsTracker = new (function () {
     if (this.donationHistory[receiverID].length > MAX_HISTORY_PER_PLAYER) this.donationHistory[receiverID].shift()
     if (this.donationHistory[senderID].length > MAX_HISTORY_PER_PLAYER) this.donationHistory[senderID].shift()
     if (this.openedWindowPlayerID === senderID || this.openedWindowPlayerID === receiverID) {
+      displayedHistory = this.getHistoryOf(this.openedWindowPlayerID)
       const indexOfNewItem =
         this.donationHistory[this.openedWindowPlayerID === senderID ? senderID : receiverID].length
-      if (indexOfNewItem === 1) this.contentElement.innerHTML = ""
-      this.contentElement.prepend(
-        generateTableRowItem(donationInfo, indexOfNewItem, this.openedWindowPlayerID, true),
-      )
-      if (this.contentElement.children.length > MAX_RENDERED_ROWS) this.contentElement.lastElementChild.remove()
+      if (matchesFilter(donationInfo, this.openedWindowPlayerID)) {
+        if (!this.contentElement.querySelector("tr")) this.contentElement.innerHTML = ""
+        this.contentElement.prepend(
+          generateTableRowItem(donationInfo, indexOfNewItem, this.openedWindowPlayerID, true),
+        )
+        if (this.contentElement.children.length > MAX_RENDERED_ROWS) this.contentElement.lastElementChild.remove()
+      }
+      updateSummary(displayedHistory, this.openedWindowPlayerID)
     }
   }
 
@@ -87,15 +131,10 @@ const donationsTracker = new (function () {
   ) {
     var history = donationsTracker.getHistoryOf(playerID)
     document.querySelector("#donationhistory h1").textContent = "Donation history for " + playerNames[playerID]
-    this.contentElement.innerHTML = ""
-    if (history.length > 0) {
-      const fragment = document.createDocumentFragment()
-      history.slice(0, MAX_RENDERED_ROWS).forEach((historyItem, index) => {
-        fragment.append(generateTableRowItem(historyItem, history.length - index, playerID))
-      })
-      this.contentElement.append(fragment)
-    }
-    else this.contentElement.innerText = "Nothing to display"
+    displayedHistory = history
+    displayedPlayerID = playerID
+    filterElement.value = "all"
+    renderDisplayedHistory()
     this.openedWindowPlayerID = playerID
     WindowManager.openWindow("donationHistory", isSingleplayer)
   }

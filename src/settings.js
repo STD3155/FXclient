@@ -6,6 +6,7 @@ import { displayChangelog } from './changelog.js';
 import replayHistory from './replayHistory.js'
 import { LobbyReminderRulesInput } from './lobbyReminderRulesInput.js';
 import { FollowedAccountNicknames } from './followedAccounts.js';
+import notifications from './notifications.js';
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
@@ -20,6 +21,7 @@ const defaultSettings = {
   realisticNames: false,
   showPlayerDensity: true,
   showPlayerGrowth: true,
+  playerStatsMode: "both",
   adaptivePlayerStats: true,
   coloredDensity: true,
   densityDisplayStyle: "absoluteQuotient",
@@ -66,6 +68,12 @@ function normalizeSettings(value) {
   // Keep these two legacy keys until the migration below has run once.
   if (Array.isArray(value.emojiBar)) normalized.emojiBar = value.emojiBar;
   if (typeof value.customEmojiBar === "boolean") normalized.customEmojiBar = value.customEmojiBar;
+  const statModes = ["off", "growth", "density", "both"];
+  if (!statModes.includes(value.playerStatsMode)) {
+    const growth = value.showPlayerGrowth !== false;
+    const density = value.showPlayerDensity !== false;
+    normalized.playerStatsMode = growth && density ? "both" : growth ? "growth" : density ? "density" : "off";
+  }
   return normalized;
 }
 
@@ -80,7 +88,7 @@ if (storedSettings !== null) {
   }
 }
 __fx.settings = settings;
-const discontinuedSettings = ["hideAllLinks", "fontName"];
+const discontinuedSettings = ["hideAllLinks", "fontName", "showPlayerDensity", "showPlayerGrowth"];
 __fx.makeMainMenuTransparent = false;
 
 // https://stackoverflow.com/a/34156339
@@ -321,13 +329,29 @@ function StartingPercentageInput(container) {
 }
 
 function SectionHeader(text) {
-  return function (container) {
+  const renderSection = function (container) {
     const title = document.createElement("p");
     const heading = document.createElement("b");
     heading.innerText = text;
     title.append(heading);
     container.append(title);
   };
+  renderSection.isSectionHeader = true;
+  return renderSection;
+}
+
+function PerformancePresets(container) {
+  const label = document.createElement("small");
+  label.textContent = "Quick presets: ";
+  const presets = {
+    Performance: { playerStatsMode: "growth", adaptivePlayerStats: true, coloredDensity: false, hoveringTooltip: false },
+    Balanced: { playerStatsMode: "both", adaptivePlayerStats: true, coloredDensity: true, hoveringTooltip: true },
+    "Maximum info": { playerStatsMode: "both", adaptivePlayerStats: false, coloredDensity: true, hoveringTooltip: true }
+  };
+  container.append(label);
+  Object.entries(presets).forEach(([name, values]) => {
+    container.append(createButton(name, () => settingsManager.applyPreset(name, values)));
+  });
 }
 
 function createCheckboxRow(labelText, note) {
@@ -438,7 +462,7 @@ function ReplayHistoryList(container) {
           navigator.clipboard.writeText(replay.data).then(() => {
           copyBtn.innerText = "Copied!";
           setTimeout(() => (copyBtn.innerText = "Copy"), 1500);
-        }).catch(() => alert("Failed to copy"));
+        }).catch(() => notifications.show("Could not copy the replay", "error"));
       });
       const deleteBtn = createButton("Delete", () => {
         replayHistory.remove(replay.timestamp);
@@ -457,6 +481,8 @@ function ReplayHistoryList(container) {
 
 const settingsManager = new (function () {
   const settingsStructure = [
+    SectionHeader("Interface & performance"),
+    PerformancePresets,
     {
       for: "displayWinCounter",
       type: "checkbox",
@@ -488,16 +514,18 @@ const settingsManager = new (function () {
     //{ for: "hideAllLinks", type: "checkbox", label: "Hide Links option also hides app store links" },
     { for: "realisticNames", type: "checkbox", label: "Realistic Bot Names" },
     CustomQuickEmojis,
+    SectionHeader("Map information"),
     {
-      for: "showPlayerDensity",
-      type: "checkbox",
-      label: "Show player density",
-    },
-    {
-      for: "showPlayerGrowth",
-      type: "checkbox",
-      label: "Show player growth",
-      note: "Displays the current average growth per tick (interest income plus one tenth of territorial income).",
+      for: "playerStatsMode",
+      type: "selectMenu",
+      label: "Map stats:",
+      note: "Choose which additional values are displayed below player names.",
+      options: [
+        { value: "both", label: "Growth and density" },
+        { value: "growth", label: "Growth only" },
+        { value: "density", label: "Density only" },
+        { value: "off", label: "Off" },
+      ],
     },
     {
       for: "adaptivePlayerStats",
@@ -553,6 +581,7 @@ const settingsManager = new (function () {
       label: "Open donation history from the leaderboard",
       note: "Changes whether or not clicking on a player's name in the in-game leaderboard in team games will open their donation history",
     },
+    SectionHeader("Gameplay & controls"),
     {
       for: "customBackgroundUrl",
       type: "textInput",
@@ -567,6 +596,7 @@ const settingsManager = new (function () {
       label: "Keybind buttons", note: "Show keybind buttons above the troop selector (max 6)"
     },
     StartingPercentageInput,
+    SectionHeader("Replay"),
     {
       for: "showReplayTimebar",
       type: "checkbox",
@@ -602,57 +632,97 @@ const settingsManager = new (function () {
   const inputFields = {}; // (includes select menus)
   const checkboxFields = {};
   const customElements = [];
+  const dirtyIndicator = document.getElementById("settingsDirty");
   let settingsUiBuilt = false;
+  function setDirty(dirty) {
+    dirtyIndicator.classList.toggle("d-none", !dirty);
+  }
   function buildSettingsUi() {
     if (settingsUiBuilt) return;
     settingsUiBuilt = true;
-    settingsStructure.forEach((item) => {
-    if (typeof item === "function") {
-      const container = document.createElement("div");
-      customElements.push(new item(container));
-      return settingsContainer.append(container);
-    }
-    const label = document.createElement("label");
-    if (item.tooltip) label.title = item.tooltip;
-    const isValueInput = item.type.endsWith("Input");
-    const element = document.createElement(
-      isValueInput || item.type === "checkbox"
-        ? "input"
-        : item.type === "selectMenu"
-        ? "select"
-        : "button"
-    );
-    if (item.type === "textInput") element.type = "text";
-    if (item.placeholder) element.placeholder = item.placeholder;
-    if (isValueInput || item.type === "selectMenu")
-      inputFields[item.for] = element;
-    if (item.text) element.innerText = item.text;
-    if (item.action) element.addEventListener("click", item.action);
-    if (item.label) label.append(item.label + " ");
-    if (item.note) {
-      const note = document.createElement("small");
-      note.innerText = item.note;
-      label.append(document.createElement("br"), note);
-    }
-    if (item.options)
-      item.options.forEach((option) => {
-        const optionElement = document.createElement("option");
-        optionElement.setAttribute("value", option.value);
-        optionElement.innerText = option.label;
-        element.append(optionElement);
+    const search = document.createElement("input");
+    search.type = "search";
+    search.className = "settings-search";
+    search.placeholder = "Search settings…";
+    search.setAttribute("aria-label", "Search settings");
+    const settingsRows = [];
+    const empty = document.createElement("p");
+    empty.className = "settings-empty d-none";
+    empty.textContent = "No settings found.";
+    settingsContainer.append(search, empty);
+    settingsContainer.addEventListener("change", (event) => {
+      if (event.target !== search) setDirty(true);
+    });
+    search.addEventListener("input", () => {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      settingsRows.forEach((row) => {
+        const matches = !query || row.dataset.search.includes(query);
+        row.classList.toggle("d-none", !matches);
+        if (matches && !row.classList.contains("settings-section")) visible++;
       });
-    label.append(element);
-    if (item.type === "checkbox") {
-      element.type = "checkbox";
-      const checkmark = document.createElement("span");
-      checkmark.className = "checkmark";
-      label.className = "checkbox";
-      label.append(checkmark);
-      checkboxFields[item.for] = element;
-    } else label.append(document.createElement("br"));
-    settingsContainer.append(label, document.createElement("br"));
+      empty.classList.toggle("d-none", visible !== 0);
+    });
+    settingsStructure.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "settings-row";
+      if (typeof item === "function") {
+        if (item.isSectionHeader) row.classList.add("settings-section");
+        customElements.push(new item(row));
+      } else {
+        const label = document.createElement("label");
+        if (item.tooltip) label.title = item.tooltip;
+        const isValueInput = item.type.endsWith("Input");
+        const element = document.createElement(
+          isValueInput || item.type === "checkbox"
+            ? "input"
+            : item.type === "selectMenu"
+            ? "select"
+            : "button"
+        );
+        if (item.type === "textInput") element.type = "text";
+        if (item.placeholder) element.placeholder = item.placeholder;
+        if (isValueInput || item.type === "selectMenu") inputFields[item.for] = element;
+        if (item.text) element.innerText = item.text;
+        if (item.action) element.addEventListener("click", item.action);
+        if (item.label) label.append(item.label + " ");
+        if (item.note) {
+          const note = document.createElement("small");
+          note.innerText = item.note;
+          label.append(document.createElement("br"), note);
+        }
+        if (item.options)
+          item.options.forEach((option) => {
+            const optionElement = document.createElement("option");
+            optionElement.value = option.value;
+            optionElement.innerText = option.label;
+            element.append(optionElement);
+          });
+        label.append(element);
+        if (item.type === "checkbox") {
+          element.type = "checkbox";
+          const checkmark = document.createElement("span");
+          checkmark.className = "checkmark";
+          label.className = "checkbox";
+          label.append(checkmark);
+          checkboxFields[item.for] = element;
+        } else label.append(document.createElement("br"));
+        row.append(label);
+      }
+      row.dataset.search = row.textContent.toLowerCase();
+      settingsRows.push(row);
+      settingsContainer.append(row);
     });
   }
+  this.applyPreset = function (name, values) {
+    buildSettingsUi();
+    Object.entries(values).forEach(([key, value]) => {
+      if (inputFields[key]) inputFields[key].value = value;
+      if (checkboxFields[key]) checkboxFields[key].checked = value;
+    });
+    setDirty(true);
+    notifications.show(`${name} preset selected — save to apply`, "success");
+  };
   this.save = function () {
     buildSettingsUi();
     Object.keys(inputFields).forEach(function (key) {
@@ -666,6 +736,7 @@ const settingsManager = new (function () {
     WindowManager.closeWindow("settings");
     discontinuedSettings.forEach((settingName) => delete settings[settingName]);
     localStorage.setItem("fx_settings", JSON.stringify(settings));
+    notifications.showAfterReload("Settings saved", "success");
     window.location.reload();
   };
 
@@ -680,18 +751,22 @@ const settingsManager = new (function () {
     input.onchange = null;
     input.value = "";
     if (!selectedFile.name.toLowerCase().endsWith(".json"))
-      return alert("Invalid file format");
+      return notifications.show("Please select a JSON settings file", "error");
     const fileReader = new FileReader();
-    fileReader.onload = function () {
+    fileReader.onload = async function () {
       let result;
       try {
         result = JSON.parse(fileReader.result);
-        if (!confirm('Warning: This will override all current settings, click "OK" to confirm')) return;
+        if (!await notifications.confirm("Replace all current settings with the imported file?", {
+          confirmLabel: "Import settings",
+          danger: true
+        })) return;
         __fx.settings = settings = normalizeSettings(result);
         localStorage.setItem("fx_settings", JSON.stringify(settings));
+        notifications.showAfterReload("Settings imported", "success");
         window.location.reload();
       } catch (error) {
-        alert("Error\n" + error);
+        notifications.show("Settings import failed: " + error.message, "error", 5000);
       }
     };
     fileReader.readAsText(selectedFile);
@@ -717,15 +792,15 @@ const settingsManager = new (function () {
       checkboxFields[key].checked = settings[key];
     });
     customElements.forEach((element) => element.update?.(settings));
+    setDirty(false);
   };
-  this.resetAll = function () {
-    if (
-      !confirm(
-        "Are you Really SURE you want to RESET ALL SETTINGS back to the default?"
-      )
-    )
-      return;
+  this.resetAll = async function () {
+    if (!await notifications.confirm("Reset all settings to their defaults?", {
+      confirmLabel: "Reset settings",
+      danger: true
+    })) return;
     localStorage.removeItem("fx_settings");
+    notifications.showAfterReload("Settings reset", "success");
     window.location.reload();
   };
   this.applySettings = function () {

@@ -44,7 +44,7 @@ export default definePatch(({ insertCode, modifyCode, replaceCode }) => {
     `window.removeEventListener("error", err);
     msg = e.lineno + " " + e.colno + "|" + stack; /* here */`,
     `if (__fx.reportError(e, msg))
-      alert("Error:\\n" + e.filename + " " + e.lineno + " " + e.colno + " " + e.message);
+      __fx.notifications.show("Game error: " + e.message, "error", 6000);
     return;`
   )
 
