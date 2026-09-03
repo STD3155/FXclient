@@ -4,29 +4,27 @@ import ModUtils, { insert } from "../modUtils.js"
 
 export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, matchCode, replaceOne, safeDictionary }) => {
 
-  // Use the game's interest calculation so this also accounts for the
-  // early-game rate and the reduction near the maximum balance.
-  const { getInterestRate } = matchCode(`
-    this.getInterestRate = function(player) {
-      var interestRate = interestRates[integerDivision((interestRatesLength - 1) * playerData.playerTerritories[player], totalTerritory)];
-      /*...*/
-    };`, { dictionary: {
-      playerData: safeDictionary.playerData,
-      playerTerritories: safeDictionary.playerTerritories,
-    } })
+  // Capture the interest function where the game itself applies interest.
+  // This is more stable than matching the function's implementation, which
+  // changes when Territorial.io adjusts its interest formula.
   modifyCode(`
-    this.initializeInterestRates = function() {
-      interestRatesLength = 512;
-      interestRates = new Uint16Array(interestRatesLength);
-      for (var i = 0; i < interestRatesLength; i++) interestRates[i] = 100 + squareRoot(integerDivision(25600 * i, interestRatesLength - 4), 9);
+    function applyInterestIncome() {
+      prepareIncomeStats();
+      var activePlayers = activePlayerManager.activePlayers;
+      var playerBalances = playerData.playerBalances;
+      for (var i = activePlayerManager.activePlayerCount - 1; i >= 0; i--) {
+        var player = activePlayers[i];
+        var interestIncome = integerDivision(interestManager.getInterestIncome(player) * playerBalances[player], 10000);
+        balanceManager.addBalance(player, Math.max(interestIncome, 1));
+      }
       ${insert(`__fx.utils.getPlayerGrowth = player =>
-        Math.max(1, integerDivision(this.getInterestRate(player) * playerData.playerBalances[player], 10000))
+        Math.max(1, integerDivision(interestManager.getInterestIncome(player) * playerData.playerBalances[player], 10000))
         + playerData.playerTerritories[player] / 10;`)}
-    };`, { dictionary: {
+      updateIncomeStats(9);
+    }`, { dictionary: {
       playerData: safeDictionary.playerData,
       playerBalances: safeDictionary.playerBalances,
       playerTerritories: safeDictionary.playerTerritories,
-      getInterestRate,
     } })
 
   const { placeBalanceAbove } = matchCode(`aLT += Math.floor(0.78 * fontSize);
