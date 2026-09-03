@@ -4,6 +4,21 @@ import ModUtils, { insert } from "../modUtils.js"
 
 export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, matchCode, replaceOne, safeDictionary }) => {
 
+  // Install the growth calculator before Uglify can inline the temporary
+  // interest-income variable. The division helper is an object method in the
+  // current game code (for example bO.fs), hence the two-part matcher.
+  modifyCode(`
+    var interestIncome = integerDivisionObject.integerDivision(interestManager.getInterestIncome(player) * playerBalances[player], 10000);
+    ${insert(`__fx.utils.getPlayerGrowth = currentPlayer =>
+      Math.max(1, integerDivisionObject.integerDivision(
+        interestManager.getInterestIncome(currentPlayer) * playerData.playerBalances[currentPlayer], 10000
+      )) + playerData.playerTerritories[currentPlayer] / 10;`)}
+    balanceManagerObject.balanceManager.addBalance(player, Math.max(interestIncome, 1));`, { dictionary: {
+      playerData: safeDictionary.playerData,
+      playerBalances: safeDictionary.playerBalances,
+      playerTerritories: safeDictionary.playerTerritories,
+    } })
+
   const { placeBalanceAbove } = matchCode(`aLT += Math.floor(0.78 * fontSize);
     if (placeBalanceAbove) {/*...*/}`)
   const { Util, numberFormatter, formatNumber } = matchCode(`
@@ -55,16 +70,6 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
   )
 
   waitForMinification(() => {
-    // Hook the single expression with which the game calculates interest.
-    // Do not match the surrounding function: its structure changes often.
-    replaceOne(
-      /(?<statement>var (?<income>\w+)=(?<divide>\w+(?:\.\w+)?)\((?<interestManager>\w+)\.(?<getInterest>\w+)\((?<currentPlayer>\w+)\)\*(?<balances>\w+)\[\w+\],1e4\);)/g,
-      (...args) => {
-        const groups = args.at(-1);
-        return `${groups.statement}__fx.utils.getPlayerGrowth=function(player){return Math.max(1,${groups.divide}(${groups.interestManager}.${groups.getInterest}(player)*${safeDictionary.playerData}.${safeDictionary.playerBalances}[player],1e4))+${safeDictionary.playerData}.${safeDictionary.playerTerritories}[player]/10;};`;
-      },
-    )
-
     // Name rendering; Renders density when the "Reverse Name/Balance" setting is on
     // also powers the feature for hiding bot names
     replaceOne(
