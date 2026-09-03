@@ -33,6 +33,111 @@
 	z-index         : 10;
 }
 
+.window-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(2px);
+	z-index: 9;
+}
+
+.window-close {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 1;
+}
+
+.settings-search {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	width: 100%;
+	margin-bottom: 0.75rem !important;
+	background-color: rgba(10, 10, 10, 0.96) !important;
+}
+
+.settings-row { margin-bottom: 0.65rem; }
+.settings-section {
+	position: sticky;
+	top: 3rem;
+	z-index: 1;
+	margin-top: 1rem;
+	padding: 0.25rem 0;
+	background: rgba(0, 0, 0, 0.92);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+.settings-section p { margin: 0; }
+.settings-dirty {
+	display: inline-block;
+	padding: 0.2em 0.45em;
+	border-radius: 999px;
+	background: #725900;
+	font-size: 0.55em;
+	vertical-align: middle;
+}
+
+#fxToasts {
+	position: fixed;
+	top: max(12px, env(safe-area-inset-top));
+	right: max(12px, env(safe-area-inset-right));
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-width: min(90vw, 420px);
+	z-index: 100;
+	pointer-events: none;
+}
+
+.fx-toast {
+	padding: 0.75rem 1rem;
+	border: 1px solid rgba(255, 255, 255, 0.8);
+	border-left-width: 5px;
+	border-radius: 6px;
+	background: rgba(10, 10, 10, 0.94);
+	color: white;
+	font-family: 'Trebuchet MS', 'Franklin Gothic Medium', Arial, sans-serif;
+	box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+	opacity: 0;
+	transform: translateY(-8px);
+	transition: opacity 0.18s, transform 0.18s;
+	pointer-events: auto;
+	cursor: pointer;
+}
+.fx-toast.visible { opacity: 1; transform: translateY(0); }
+.fx-toast-success { border-left-color: #32cd32; }
+.fx-toast-error { border-left-color: #ff4567; }
+.fx-toast-info { border-left-color: #8fd3ff; }
+
+.fx-confirm-overlay {
+	position: fixed;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	padding: 1rem;
+	background: rgba(0, 0, 0, 0.68);
+	z-index: 110;
+}
+.fx-confirm {
+	width: min(92vw, 480px);
+	padding: 1rem;
+	border: 2px solid white;
+	border-radius: 8px;
+	background: rgba(10, 10, 10, 0.98);
+	color: white;
+	font: 18px 'Trebuchet MS', 'Franklin Gothic Medium', Arial, sans-serif;
+}
+.fx-confirm-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+.fx-confirm button {
+	min-height: 42px;
+	padding: 0.5rem 0.8rem;
+	border: 1px solid white;
+	border-radius: 5px;
+	background: rgba(255, 255, 255, 0.12);
+	color: white;
+}
+.fx-confirm button.danger { background: #8b1730; }
+
 .window button,
 .window input,
 .window select {
@@ -196,6 +301,15 @@ td {
 #playerlist_content.clickable td:hover { background-color: #00ff0040; }
 #playerlist_content.clickable tr:focus-visible td { background-color: #00ff0040; }
 .player-list-section th { padding-top: 0.6em; text-align: left; font-weight: normal; }
+#playerlist_search { width: 100%; }
+.list-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	margin-bottom: 0.5rem;
+}
 
 tr.new {
 	animation: flashAnimation 0.4s ease-out;
@@ -332,6 +446,17 @@ label.checkbox .checkmark:after {
 }
 
 #replayTimebar .replay-time { min-width: 2.8em; text-align: center; white-space: nowrap; }
+#replayTimebar .replay-control {
+	min-width: 3.2em;
+	min-height: 32px;
+	padding: 4px 7px;
+	margin: 0;
+	border: 1px solid rgba(255, 255, 255, 0.8);
+	border-radius: 5px;
+	background: rgba(0, 0, 0, 0.75);
+	color: white;
+	cursor: pointer;
+}
 
 #replayTimebar .replay-track {
 	position: relative; flex: 1; height: 14px; cursor: pointer; touch-action: none;
@@ -341,6 +466,28 @@ label.checkbox .checkmark:after {
 @media (pointer: coarse) {
 	.window button, .window input, .window select { min-height: 44px; }
 	#replayTimebar .replay-track { height: 24px; }
+}
+
+@media (max-width: 700px) {
+	.window {
+		width: calc(100% - 16px);
+		max-height: calc(100dvh - 16px);
+		margin-top: max(8px, env(safe-area-inset-top));
+		padding: 12px;
+	}
+	.window.settings footer {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.window.settings footer button { flex: 1 1 auto; }
+	#replayTimebar {
+		width: calc(100% - 16px);
+		padding: 6px 8px;
+		gap: 5px;
+	}
+	#replayTimebar .replay-time { min-width: 2.5em; }
+	#replayTimebar .replay-control { min-width: 2.8em; padding-inline: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

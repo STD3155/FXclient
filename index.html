@@ -36,7 +36,7 @@
   <meta itemprop="image" content="https://fxclient.github.io/FXclient/assets/logo.png">
 
   <!-- FX Client CSS -->
-  <link rel="stylesheet" href="main.css?1788474138824">
+  <link rel="stylesheet" href="main.css?1788475033221">
   <!-- Game CSS -->
   <style>
     html,
@@ -101,18 +101,20 @@
   <canvas id="canvasA" width="128" height="128"></canvas>
   <div id="windowContainer">
     <div class="window flex-column settings" style="display:none">
-      <h1>Settings</h1>
+      <h1>Settings <small id="settingsDirty" class="settings-dirty d-none">Unsaved changes</small></h1>
       <div class="scrollable"></div>
       <hr>
       <footer>
         <button onclick="__fx.settingsManager.resetAll()">Reset Settings</button>
-        <button onclick="__fx.settingsManager.save()">Save Settings</button>
+        <button onclick="__fx.WindowManager.closeWindow('settings')">Cancel</button>
+        <button onclick="__fx.settingsManager.save()">Save &amp; Reload</button>
         <button onclick="__fx.settingsManager.importFromFile()">Import</button>
         <button onclick="__fx.settingsManager.exportToFile()">Export</button>
       </footer>
     </div>
     <div class="window scrollable selectable" id="playerlist" style="display: none;">
       <h1>Player List</h1>
+      <input type="search" id="playerlist_search" placeholder="Search players…" aria-label="Search players">
       <table>
         <tbody id="playerlist_content"></tbody>
       </table>
@@ -120,6 +122,16 @@
     <div class="window scrollable selectable" id="donationhistory" style="display:none">
       <h1>Donation history for </h1>
       <p id="donationhistory_note">Note: donations from bots are not shown here</p>
+      <div class="list-toolbar">
+        <label>Show
+          <select id="donationhistory_filter">
+            <option value="all">All</option>
+            <option value="received">Received</option>
+            <option value="sent">Sent</option>
+          </select>
+        </label>
+        <span id="donationhistory_summary"></span>
+      </div>
       <table>
         <tbody id="donationhistory_content"></tbody>
       </table>
@@ -130,9 +142,9 @@
       <button onclick="document.getElementById('updateNotification').style.display = 'none'">Dismiss</button>
     </div>
   </div>
-  <script src="variables.js?1788474138824"></script>
-  <script src="fx.bundle.js?1788474138824"></script>
-  <script src="game.js?1788474138824"></script>
+  <script src="variables.js?1788475033221"></script>
+  <script src="fx.bundle.js?1788475033221"></script>
+  <script src="game.js?1788475033221"></script>
 </body>
 
 </html>

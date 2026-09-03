@@ -42,8 +42,8 @@ function a() {
 				for (var match, a6 = new RegExp(":([0-9]+):([0-9]+)", "g"), result = []; null !== (match = a6.exec(stack));) result.push(parseInt(match[1], 10)), result.push(parseInt(match[2], 10));
 				return result.length ? result.join(" ") : 0
 			}(e);
-			return 0 === f || e.lineno < 2 ? void console.log("Error: External Code") : (window.removeEventListener("error", d), c = e.lineno + " " + e.colno + "|" + f, void(__fx.reportError(e, c) && alert("Error:\n" + e.filename + " " + e
-				.lineno + " " + e.colno + " " + e.message)))
+			return 0 === f || e.lineno < 2 ? void console.log("Error: External Code") : (window.removeEventListener("error", d), c = e.lineno + " " + e.colno + "|" + f, void(__fx.reportError(e, c) && __fx.notifications.show("Game error: " + e
+				.message, "error", 6e3)))
 		} catch (e) {
 			c = "SE|" + c + "|" + e, console.log(c), alert(c)
 		}
@@ -7037,7 +7037,10 @@ function ce() {
 		var ___statsColor = iT.fillStyle;
 		var ___showStats = !__fx.settings.adaptivePlayerStats ||
 			fontSize >= 9 * (__fx.hoveringTooltip.canvasPixelScale || 1);
-		if (___showStats && aLV && __fx.settings.showPlayerDensity) {
+		var ___statsMode = __fx.settings.playerStatsMode;
+		var ___showDensity = ___statsMode === "both" || ___statsMode === "density";
+		var ___showGrowth = ___statsMode === "both" || ___statsMode === "growth";
+		if (___showStats && aLV && ___showDensity) {
 			var ___densityStats = __fx.utils.getDensityStats(
 				___id,
 				ah.hT,
@@ -7048,7 +7051,7 @@ function ce() {
 			iT.fillText(___densityStats.text, fY, ___statsY);
 			___statsY += fontSize;
 		}
-		if (___showStats && aLV && __fx.settings.showPlayerGrowth &&
+		if (___showStats && aLV && ___showGrowth &&
 			__fx.utils.playerGrowth && __fx.utils.playerGrowth[___id] !== undefined) {
 			iT.fillStyle = ___statsColor;
 			var ___growthText = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []);
@@ -7065,11 +7068,12 @@ function ce() {
 			aLu = bD.sJ.a0e(ah.hT[aC] - a4u);
 
 		function drawPlayerStats() {
-			var statsColor, statsLine, densityStats, growthLabel;
-			__fx.settings.adaptivePlayerStats && fontSize < 9 * (__fx.hoveringTooltip.canvasPixelScale || 1) || (statsColor = iT.fillStyle, statsLine = 1, !aLV && __fx.settings.showPlayerDensity && (densityStats = __fx.utils.getDensityStats(aC, ah
-					.hT, ah.hF, __fx.settings.densityDisplayStyle), __fx.settings.coloredDensity && (iT.fillStyle = densityStats.color), iT.fillText(densityStats.text, aLi, aLj + fontSize * statsLine++)), !aLV && __fx.settings.showPlayerGrowth &&
-				__fx.utils.playerGrowth && void 0 !== __fx.utils.playerGrowth[aC] && (iT.fillStyle = statsColor, void 0 === (growthLabel = (densityStats = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []))[aC]) && (growthLabel =
-					densityStats[aC] = "+" + bD.sJ.a0e(__fx.utils.playerGrowth[aC])), iT.fillText(growthLabel, aLi, aLj + fontSize * statsLine)), iT.fillStyle = statsColor)
+			var statsColor, statsLine, statsMode, showGrowth;
+			__fx.settings.adaptivePlayerStats && fontSize < 9 * (__fx.hoveringTooltip.canvasPixelScale || 1) || (statsColor = iT.fillStyle, statsLine = 1, showGrowth = "both" === (statsMode = __fx.settings.playerStatsMode) || "growth" === statsMode,
+				aLV || "both" !== statsMode && "density" !== statsMode || (statsMode = __fx.utils.getDensityStats(aC, ah.hT, ah.hF, __fx.settings.densityDisplayStyle), __fx.settings.coloredDensity && (iT.fillStyle = statsMode.color), iT.fillText(
+					statsMode.text, aLi, aLj + fontSize * statsLine++)), !aLV && showGrowth && __fx.utils.playerGrowth && void 0 !== __fx.utils.playerGrowth[aC] && (iT.fillStyle = statsColor, void 0 === (showGrowth = (statsMode = __fx.utils
+					.playerGrowthText || (__fx.utils.playerGrowthText = []))[aC]) && (showGrowth = statsMode[aC] = "+" + bD.sJ.a0e(__fx.utils.playerGrowth[aC])), iT.fillText(showGrowth, aLi, aLj + fontSize * statsLine)), iT.fillStyle = statsColor
+				)
 		}
 		a4u ? (a4u = iT.fillStyle, iT.fillStyle = aLn(fontSize, 2 + aLk % 2), iT.fillText(aLu, aLi, aLj), iT.fillStyle = a4u) : aLk >> 1 & 1 ? (iT.lineWidth = .05 * fontSize, iT.strokeStyle = aLn(fontSize, aLk % 2), iT.strokeText(aLu, aLi, aLj)) : (
 			1 < aLk && (iT.lineWidth = .12 * fontSize, iT.strokeStyle = aLn(fontSize, aLk), iT.strokeText(aLu, aLi, aLj)), iT.fillText(aLu, aLi, aLj)), drawPlayerStats()
