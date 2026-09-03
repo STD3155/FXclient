@@ -19,6 +19,7 @@ var settings = {
   //"hideAllLinks": false,
   realisticNames: false,
   showPlayerDensity: true,
+  showPlayerGrowth: true,
   coloredDensity: true,
   densityDisplayStyle: "absoluteQuotient",
   hideBotNames: false,
@@ -459,6 +460,12 @@ const settingsManager = new (function () {
       for: "showPlayerDensity",
       type: "checkbox",
       label: "Show player density",
+    },
+    {
+      for: "showPlayerGrowth",
+      type: "checkbox",
+      label: "Show player growth",
+      note: "Displays the current average growth per tick (interest income plus one tenth of territorial income).",
     },
     {
       for: "coloredDensity",
