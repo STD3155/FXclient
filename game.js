@@ -3610,10 +3610,10 @@ function c4() {
 				this.yY = this.data.numberTeams, this.data.teamPlayerCount ? this.yZ = +(0 < this.data.teamPlayerCount[0]) : (this.yZ = 0, this.iL && this.l6 && (this.data.teamPlayerCount = new Uint16Array(9), this.data.teamPlayerCount.fill(1, 1,
 					this.yY + 1), aE.a5t.a5y())), this.a5r = this.km <= 2 ? 30 : this.km <= 50 ? 40 : 50, this.a5q = this.hp = this.data.selectableSpawn, this.qg = this.hp ? new a5g : null, 1 === m.dz ? this.yR = this.km : this.yR = this.data
 				.playerCount, this.yW = this.yR, this.l8 = this.yR - this.km, this.a1P = 0, this.fB = this.data.selectedPlayer, this.a1K = 0, this.a1S = 0, this.a1f = 0, this.a1F = 0, az.a5z(this.data.spawningSeed), af.di(), ah.di(), ao.di(), aj
-				.a60(), bB.pi.qU = [], bB.hr.pl = 1, __fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.customLobby.isActive() && __fx.customLobby.hideWindow(), bj.di(), this.a1N = 1, bg.di(), a61(), ad
-				.dj(), aq.a62(), be.di(), ad.di(), au.di(), bP.di(), bQ.di(), ap.di(), bY.a63(), aF.di(), aj.a8(), aJ.di(), aK.di(), am.a64(), bC.di(), bk.di(), bS.di(), bh.di(), a65.putImageData(a66, 0, 0), aW.di(), aT.di(), aS.di(), bF.di(), ax
-				.di(), aV.di(), aX.di(), aN.di(), aR.di(), aO.di(), aQ.di(), aM.di(), aY.di(), aG.di(), aH.di(), gU(), ae.di(), ag.di(), b5.di(), b6.di(), b2.di(), b8.di(), b9.di(), this.a1g.di(), bi.a63(), aI.ng(), 0 === ah.nM[aE.fB] && aY.show(!1,
-					!0), ag.n8(!0), aw.di(), bi.dq = !0, this.ha || this.l6 && this.hp || a1.a2.setState(1), this.a5v = 0
+				.a60(), bB.pi.qU = [], bB.hr.pl = 1, __fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.customLobby.isActive() && __fx.customLobby.hideWindow(), bj.di(),
+				this.a1N = 1, bg.di(), a61(), ad.dj(), aq.a62(), be.di(), ad.di(), au.di(), bP.di(), bQ.di(), ap.di(), bY.a63(), aF.di(), aj.a8(), aJ.di(), aK.di(), am.a64(), bC.di(), bk.di(), bS.di(), bh.di(), a65.putImageData(a66, 0, 0), aW.di(),
+				aT.di(), aS.di(), bF.di(), ax.di(), aV.di(), aX.di(), aN.di(), aR.di(), aO.di(), aQ.di(), aM.di(), aY.di(), aG.di(), aH.di(), gU(), ae.di(), ag.di(), b5.di(), b6.di(), b2.di(), b8.di(), b9.di(), this.a1g.di(), bi.a63(), aI.ng(), 0 ===
+				ah.nM[aE.fB] && aY.show(!1, !0), ag.n8(!0), aw.di(), bi.dq = !0, this.ha || this.l6 && this.hp || a1.a2.setState(1), this.a5v = 0
 		}, this.a2m = function(eX) {
 			bC.qe.a68.length ? this.a5w = bC.qe.a68 : (this.a5w = bC.a69.a0p(), __fx.replayHistory.save(this.a5w)), b1.z.a6A(), bt.clear(), this.a1N = 0, bi.a6B(), a1.a2.setState(0), ab.setState(0), bX.eO.show(eX), 2 === this.a5v ? u.z.a6C(0) : 1 ===
 				this.a5v ? u.v(19) : u.v(5, 5)
@@ -6931,7 +6931,8 @@ function cc() {
 				for (var lN = am.lN, hT = ah.hT, aC = am.lI - 1; 0 <= aC; aC--) {
 					var gz = lN[aC],
 						aKv = bO.fs(af.aCn(gz) * hT[gz], 1e4);
-					__fx.utils.isHumanPlayer(gz) && ((__fx.utils.playerGrowth || (__fx.utils.playerGrowth = []))[gz] = "+" + bD.sJ.a0e(Math.max(aKv, 1) + ah.hF[gz] / 10)), bD.gn.gq(gz, Math.max(aKv, 1))
+					__fx.utils.isHumanPlayer(gz) && ((__fx.utils.playerGrowth || (__fx.utils.playerGrowth = []))[gz] = Math.max(aKv, 1) + ah.hF[gz] / 10, (__fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []))[gz] = void 0), bD.gn
+						.gq(gz, Math.max(aKv, 1))
 				}
 				aKw(9)
 			}(), function() {
@@ -7034,16 +7035,29 @@ function ce() {
 		if (showName) iT.fillText(ah.zq[aC], fY, fa), aC < aE.km && 2 !== ah.a4l[aC] || (aC = fontSize / aL8[aC], iT.fillRect(fY - .5 * aC, fa + bD.rK.a0O * fontSize, aC, Math.max(1, .1 * fontSize)));
 		var ___statsY = showName ? fa + fontSize : fa;
 		var ___statsColor = iT.fillStyle;
-		if (aLV && __fx.settings.showPlayerDensity) {
-			__fx.settings.coloredDensity && (iT.fillStyle = __fx.utils.textStyleBasedOnDensity(___id));
-			iT.fillText(__fx.utils.getDensity(___id), fY, ___statsY);
+		var ___showStats = !__fx.settings.adaptivePlayerStats ||
+			fontSize >= 9 * (__fx.hoveringTooltip.canvasPixelScale || 1);
+		if (___showStats && aLV && __fx.settings.showPlayerDensity) {
+			var ___densityStats = __fx.utils.getDensityStats(
+				___id,
+				ah.hT,
+				ah.hF,
+				__fx.settings.densityDisplayStyle
+			);
+			__fx.settings.coloredDensity && (iT.fillStyle = ___densityStats.color);
+			iT.fillText(___densityStats.text, fY, ___statsY);
 			___statsY += fontSize;
 		}
-		if (aLV && __fx.settings.showPlayerGrowth &&
+		if (___showStats && aLV && __fx.settings.showPlayerGrowth &&
 			__fx.utils.playerGrowth && __fx.utils.playerGrowth[___id] !== undefined) {
 			iT.fillStyle = ___statsColor;
-			iT.fillText(__fx.utils.playerGrowth[___id], fY, ___statsY);
+			var ___growthText = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []);
+			var ___growthLabel = ___growthText[___id];
+			if (___growthLabel === undefined)
+				___growthLabel = ___growthText[___id] = "+" + bD.sJ.a0e(__fx.utils.playerGrowth[___id]);
+			iT.fillText(___growthLabel, fY, ___statsY);
 		}
+		iT.fillStyle = ___statsColor;
 	}
 
 	function aLo(iT, aC, fontSize, aLi, aLj, aLk) {
@@ -7051,10 +7065,11 @@ function ce() {
 			aLu = bD.sJ.a0e(ah.hT[aC] - a4u);
 
 		function drawPlayerStats() {
-			var statsColor = iT.fillStyle,
-				statsLine = 1;
-			!aLV && __fx.settings.showPlayerDensity && (__fx.settings.coloredDensity && (iT.fillStyle = __fx.utils.textStyleBasedOnDensity(aC)), iT.fillText(__fx.utils.getDensity(aC), aLi, aLj + fontSize * statsLine++)), !aLV && __fx.settings
-				.showPlayerGrowth && __fx.utils.playerGrowth && void 0 !== __fx.utils.playerGrowth[aC] && (iT.fillStyle = statsColor, iT.fillText(__fx.utils.playerGrowth[aC], aLi, aLj + fontSize * statsLine))
+			var statsColor, statsLine, densityStats, growthLabel;
+			__fx.settings.adaptivePlayerStats && fontSize < 9 * (__fx.hoveringTooltip.canvasPixelScale || 1) || (statsColor = iT.fillStyle, statsLine = 1, !aLV && __fx.settings.showPlayerDensity && (densityStats = __fx.utils.getDensityStats(aC, ah
+					.hT, ah.hF, __fx.settings.densityDisplayStyle), __fx.settings.coloredDensity && (iT.fillStyle = densityStats.color), iT.fillText(densityStats.text, aLi, aLj + fontSize * statsLine++)), !aLV && __fx.settings.showPlayerGrowth &&
+				__fx.utils.playerGrowth && void 0 !== __fx.utils.playerGrowth[aC] && (iT.fillStyle = statsColor, void 0 === (growthLabel = (densityStats = __fx.utils.playerGrowthText || (__fx.utils.playerGrowthText = []))[aC]) && (growthLabel =
+					densityStats[aC] = "+" + bD.sJ.a0e(__fx.utils.playerGrowth[aC])), iT.fillText(growthLabel, aLi, aLj + fontSize * statsLine)), iT.fillStyle = statsColor)
 		}
 		a4u ? (a4u = iT.fillStyle, iT.fillStyle = aLn(fontSize, 2 + aLk % 2), iT.fillText(aLu, aLi, aLj), iT.fillStyle = a4u) : aLk >> 1 & 1 ? (iT.lineWidth = .05 * fontSize, iT.strokeStyle = aLn(fontSize, aLk % 2), iT.strokeText(aLu, aLi, aLj)) : (
 			1 < aLk && (iT.lineWidth = .12 * fontSize, iT.strokeStyle = aLn(fontSize, aLk), iT.strokeText(aLu, aLi, aLj)), iT.fillText(aLu, aLi, aLj)), drawPlayerStats()
