@@ -12,6 +12,35 @@ const formatTime = (time) => {
   return m + (s < 10 ? ":0" : ":") + s
 }
 
+function getDonationControls() {
+  let filter = document.getElementById("donationhistory_filter")
+  let summary = document.getElementById("donationhistory_summary")
+  if (filter && summary) return { filter, summary }
+
+  const toolbar = document.createElement("div")
+  toolbar.className = "list-toolbar"
+  const label = document.createElement("label")
+  label.append("Show ")
+  filter = document.createElement("select")
+  filter.id = "donationhistory_filter"
+  ;[
+    ["all", "All"],
+    ["received", "Received"],
+    ["sent", "Sent"]
+  ].forEach(([value, text]) => {
+    const option = document.createElement("option")
+    option.value = value
+    option.textContent = text
+    filter.append(option)
+  })
+  summary = document.createElement("span")
+  summary.id = "donationhistory_summary"
+  label.append(filter)
+  toolbar.append(label, summary)
+  document.getElementById("donationhistory_content")?.closest("table")?.before(toolbar)
+  return { filter, summary }
+}
+
 WindowManager.add({
   name: "donationHistory",
   element: document.querySelector("#donationhistory"),
@@ -27,8 +56,7 @@ WindowManager.add({
 const donationsTracker = new (function () {
   this.openedWindowPlayerID = null
   this.contentElement = document.querySelector("#donationhistory_content")
-  const filterElement = document.getElementById("donationhistory_filter")
-  const summaryElement = document.getElementById("donationhistory_summary")
+  const { filter: filterElement, summary: summaryElement } = getDonationControls()
   this.donationHistory = Array(512)
   let resetCalled = false
   let displayedHistory = []

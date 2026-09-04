@@ -632,10 +632,17 @@ const settingsManager = new (function () {
   const inputFields = {}; // (includes select menus)
   const checkboxFields = {};
   const customElements = [];
-  const dirtyIndicator = document.getElementById("settingsDirty");
+  let dirtyIndicator = document.getElementById("settingsDirty");
+  if (!dirtyIndicator) {
+    dirtyIndicator = document.createElement("small");
+    dirtyIndicator.id = "settingsDirty";
+    dirtyIndicator.className = "settings-dirty d-none";
+    dirtyIndicator.textContent = "Unsaved changes";
+    document.querySelector(".settings h1")?.append(" ", dirtyIndicator);
+  }
   let settingsUiBuilt = false;
   function setDirty(dirty) {
-    dirtyIndicator.classList.toggle("d-none", !dirty);
+    dirtyIndicator?.classList.toggle("d-none", !dirty);
   }
   function buildSettingsUi() {
     if (settingsUiBuilt) return;

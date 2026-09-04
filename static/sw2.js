@@ -10,6 +10,15 @@ self.addEventListener("fetch", (e) => {
   const request = e.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (request.mode === "navigate") {
+    e.respondWith(
+      fetch(request).then(async (response) => {
+        if (response.ok) await (await cachePromise).put(request, response.clone());
+        return response;
+      }).catch(async () => (await cachePromise).match(request))
+    );
+    return;
+  }
   e.respondWith(
     (async () => {
       const cache = await cachePromise;

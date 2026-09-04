@@ -7,7 +7,15 @@ const playerList = new (function () {
     const playersIcon = document.createElement('img');
     playersIcon.setAttribute('src', 'assets/players_icon.png');
     const content = document.getElementById("playerlist_content");
-    const search = document.getElementById("playerlist_search");
+    let search = document.getElementById("playerlist_search");
+    if (!search) {
+        search = document.createElement("input");
+        search.type = "search";
+        search.id = "playerlist_search";
+        search.placeholder = "Search players…";
+        search.setAttribute("aria-label", "Search players");
+        content.closest("table")?.before(search);
+    }
     search.addEventListener("input", () => {
         const query = search.value.trim().toLowerCase();
         content.querySelectorAll("tr[data-player-id]").forEach((row) => {
