@@ -1149,7 +1149,8 @@ function pe() {
 	this.pl = 1, this.hs = function(fD) {
 		aE.l6 ? bB.pg.hs(aE.fB, fD) : b1.pm.pn(fD)
 	}, this.hy = function(j4, jv) {
-		this.pl && (this.pl = 0, bm.po.pp(182, j4)), aE.l6 ? bB.pg.hy(aE.fB, j4, jv) : b1.pm.pq(j4, jv)
+		this.pl && (this.pl = 0, bm.po.pp(182, j4)), null !== (j4 = __fx.economicAttack.resolve(j4, ah.hT[aE.fB], jv < aE.fO ? ah.hT[jv] : null, jv < aE.fO ? ah.hF[jv] : null, jv < aE.fO ? ae.hU(aE.fB, jv) : 0)) && (aE.l6 ? bB.pg.hy(aE.fB, j4,
+			jv) : b1.pm.pq(j4, jv))
 	}, this.pr = function(j4, ps) {
 		aE.l6 ? bB.pg.pt(aE.fB, j4, ps) : b1.pm.pu(j4, ps)
 	}, this.i3 = function(j4, fD) {
@@ -3610,10 +3611,10 @@ function c4() {
 				this.yY = this.data.numberTeams, this.data.teamPlayerCount ? this.yZ = +(0 < this.data.teamPlayerCount[0]) : (this.yZ = 0, this.iL && this.l6 && (this.data.teamPlayerCount = new Uint16Array(9), this.data.teamPlayerCount.fill(1, 1,
 					this.yY + 1), aE.a5t.a5y())), this.a5r = this.km <= 2 ? 30 : this.km <= 50 ? 40 : 50, this.a5q = this.hp = this.data.selectableSpawn, this.qg = this.hp ? new a5g : null, 1 === m.dz ? this.yR = this.km : this.yR = this.data
 				.playerCount, this.yW = this.yR, this.l8 = this.yR - this.km, this.a1P = 0, this.fB = this.data.selectedPlayer, this.a1K = 0, this.a1S = 0, this.a1f = 0, this.a1F = 0, az.a5z(this.data.spawningSeed), af.di(), ah.di(), ao.di(), aj
-				.a60(), bB.pi.qU = [], bB.hr.pl = 1, __fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.customLobby.isActive() && __fx.customLobby.hideWindow(), bj.di(),
-				this.a1N = 1, bg.di(), a61(), ad.dj(), aq.a62(), be.di(), ad.di(), au.di(), bP.di(), bQ.di(), ap.di(), bY.a63(), aF.di(), aj.a8(), aJ.di(), aK.di(), am.a64(), bC.di(), bk.di(), bS.di(), bh.di(), a65.putImageData(a66, 0, 0), aW.di(),
-				aT.di(), aS.di(), bF.di(), ax.di(), aV.di(), aX.di(), aN.di(), aR.di(), aO.di(), aQ.di(), aM.di(), aY.di(), aG.di(), aH.di(), gU(), ae.di(), ag.di(), b5.di(), b6.di(), b2.di(), b8.di(), b9.di(), this.a1g.di(), bi.a63(), aI.ng(), 0 ===
-				ah.nM[aE.fB] && aY.show(!1, !0), ag.n8(!0), aw.di(), bi.dq = !0, this.ha || this.l6 && this.hp || a1.a2.setState(1), this.a5v = 0
+				.a60(), bB.pi.qU = [], bB.hr.pl = 1, __fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.economicAttack.reset(), __fx.customLobby.isActive() && __fx
+				.customLobby.hideWindow(), bj.di(), this.a1N = 1, bg.di(), a61(), ad.dj(), aq.a62(), be.di(), ad.di(), au.di(), bP.di(), bQ.di(), ap.di(), bY.a63(), aF.di(), aj.a8(), aJ.di(), aK.di(), am.a64(), bC.di(), bk.di(), bS.di(), bh.di(), a65
+				.putImageData(a66, 0, 0), aW.di(), aT.di(), aS.di(), bF.di(), ax.di(), aV.di(), aX.di(), aN.di(), aR.di(), aO.di(), aQ.di(), aM.di(), aY.di(), aG.di(), aH.di(), gU(), ae.di(), ag.di(), b5.di(), b6.di(), b2.di(), b8.di(), b9.di(), this
+				.a1g.di(), bi.a63(), aI.ng(), 0 === ah.nM[aE.fB] && aY.show(!1, !0), ag.n8(!0), aw.di(), bi.dq = !0, this.ha || this.l6 && this.hp || a1.a2.setState(1), this.a5v = 0
 		}, this.a2m = function(eX) {
 			bC.qe.a68.length ? this.a5w = bC.qe.a68 : (this.a5w = bC.a69.a0p(), __fx.replayHistory.save(this.a5w)), b1.z.a6A(), bt.clear(), this.a1N = 0, bi.a6B(), a1.a2.setState(0), ab.setState(0), bX.eO.show(eX), 2 === this.a5v ? u.z.a6C(0) : 1 ===
 				this.a5v ? u.v(19) : u.v(5, 5)
@@ -3892,8 +3893,7 @@ function cH() {
 	var a7J, k, a7K, a7L, a7M, a7N, a7O, a7P, a7Q;
 
 	function zS() {
-		return aS.a7i(aO.a7e()) ? ax.iD ? __fx.settings.keybindButtons ? aS.fa - 2 * aS.k - 3 * a7K : aS.fa - aS.k - 2 * a7K : __fx.settings.keybindButtons ? aS.fa - aS.k - 2 * a7K : aS.fa - a7K : bF.a7i(aO.a7h()) ? ax.iD ? bF.zS() - aS.k - 2 * a7K :
-			bF.zS() - a7K : ax.iD ? i.k - aS.k - (bn.a6U() + 1) * a7K : i.k - bn.a6U() * bf.gap
+		return aS.a7i(aO.a7e()) ? ax.iD ? aS.fa - 2 * aS.k - 3 * a7K : aS.fa - aS.k - 2 * a7K : bF.a7i(aO.a7h()) ? ax.iD ? bF.zS() - aS.k - 2 * a7K : bF.zS() - a7K : ax.iD ? i.k - aS.k - (bn.a6U() + 1) * a7K : i.k - bn.a6U() * bf.gap
 	}
 
 	function a7V(eZ, r1, id, gz, a7Y, a7Z, lP, a7a, a7b, a7c, a7m) {
@@ -4331,7 +4331,7 @@ function ct() {
 	}
 
 	function zS() {
-		return aS.a7i(aO.a7e()) ? __fx.settings.keybindButtons ? aS.fa - 2 * (k + bf.gap) : aS.fa - k - bf.gap : bF.a7i(aO.a7h()) ? bF.zS() - k - bf.gap : i.k - k - bn.a6U() * bf.gap
+		return aS.a7i(aO.a7e()) ? aS.fa - 2 * (k + bf.gap) : bF.a7i(aO.a7h()) ? bF.zS() - k - bf.gap : i.k - k - bn.a6U() * bf.gap
 	}
 	this.dj = function() {
 		for (var aC = 0; aC < 2; aC++) a4F[aC] = bD.canvas.a07(ac.get(3), 8 - aC, bE.pb), a4F[aC] = bD.canvas.a4H(a4F[aC])
@@ -4441,7 +4441,7 @@ function cL() {
 		return this.iD() && fY < m1 && m1 < fY + j && m2 > this.fa
 	}, this.he = function(m1, m2) {
 		if (!this.iD()) return !1;
-		if (!(__fx.settings.keybindButtons && m2 > this.fa - Math.floor(bf.gap / 4) - this.k && m2 < this.fa - Math.floor(bf.gap / 4) && __fx.mobileKeybinds.click(m1 - fY))) {
+		if (!(m2 > this.fa - Math.floor(bf.gap / 4) - this.k && m2 < this.fa - Math.floor(bf.gap / 4) && __fx.mobileKeybinds.click(m1 - fY))) {
 			if (!aS.a3P(m1, m2)) return !1;
 			aT.ns = !1, ! function(st, m1, m2) {
 				if (function(m1, m2) {
@@ -4466,7 +4466,7 @@ function cL() {
 	}, this.ed = function() {
 		this.iD() && a5a !== bD.gn.j3(aE.fB, this.hv()) && (a8d = !0)
 	}, this.vv = function() {
-		this.iD() && (vw.drawImage(canvas, fY, this.fa), __fx.settings.keybindButtons) && __fx.mobileKeybinds.draw(vw, fY, this.fa)
+		this.iD() && (vw.drawImage(canvas, fY, this.fa), __fx.mobileKeybinds.draw(vw, fY, this.fa))
 	}
 }
 
@@ -9190,16 +9190,8 @@ function aP9() {
 			aAW = aRo.j - 2 * aAW - aSp - gap,
 			aAW = (bD.rK.u1(s7.e, fY, uY, aAW, aSp), bD.rK.u1(aSj[4].button, fY + aAW + gap, uY, aSp, aSp), t3 = uY, .5 * (aRo.fa + aRo.k - (uY += aSp + gap) - gap));
 		bD.rK.u1(aSj[0].button, fY, uY, j, aAW), bD.rK.u1(aSj[1].button, fY + j + gap, uY, j, aAW), bD.rK.u1(aSj[2].button, fY, uY + aAW + gap, j, aAW), bD.rK.u1(aSj[3].button, fY + j + gap, uY + aAW + gap, j, aAW);
-		var fxMainHeight = aAW * 2 / 3 - gap,
-			fxSmallHeight = aAW / 3,
-			fxSecondRow = uY + fxMainHeight + gap,
-			fxSettingsRow = fxSecondRow + fxMainHeight + gap;
-		bD.rK.u1(aSj[0].button, fY, uY, j, fxMainHeight);
-		bD.rK.u1(aSj[1].button, fY + j + gap, uY, j, fxMainHeight);
-		bD.rK.u1(aSj[2].button, fY, fxSecondRow, j, fxMainHeight);
-		bD.rK.u1(aSj[3].button, fY + j + gap, fxSecondRow, j, fxMainHeight);
-		bD.rK.u1(aSj[5].button, fY, fxSettingsRow, j * 2 + gap, fxSmallHeight);
-		bD.rK.u1(aSj[6].button, fY, fxSettingsRow + fxSmallHeight + gap, j * 2 + gap, fxSmallHeight);
+		bD.rK.u1(aSj[5].button, fY, uY + aAW * 2 + gap * 2, j * 2 + gap, aAW / 3);
+		bD.rK.u1(aSj[6].button, fY, uY + aAW * 2.33 + gap * 3, j * 2 + gap, aAW / 3);
 		aSj[5].button.style.zIndex = aSj[6].button.style.zIndex = "8";
 		aSj[5].button.style.pointerEvents = aSj[6].button.style.pointerEvents = "auto";
 		for (var aC = 0; aC < aSj.length; aC++) aSj[aC].button.style.font = bD.rK.t8(0, bD.rK.vM(.065 * aRo.k)), bD.rK.rU(aSj[aC].button, 5);
