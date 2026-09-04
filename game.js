@@ -1010,12 +1010,27 @@ function my() {
 }
 
 function n0() {
-	var fxPlayer, fxTick, fxBalance, fxTerritory, fxArmyIncomeScale, fxTerritorialIncomeScale;
-	b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && bi.kj() % 10 == 3 && bv.hx(aE.fB) && (fxPlayer = aE.fB, fxTick = bi.kj(), fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[
-			fxPlayer], fxArmyIncomeScale = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer], fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 === aE.data.tIncomeType ? aE
-			.data.tIncomeValue : aE.data.tIncomeData[fxPlayer], fxArmyIncomeScale = __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxArmyIncomeScale, fxTerritorialIncomeScale), null !== (
-				fxTerritorialIncomeScale = __fx.autoExpand.plan(fxTick, fxBalance, fxTerritory, fxArmyIncomeScale))) && (aE.l6 ? bB.pg.hy(fxPlayer, fxTerritorialIncomeScale.encoded, aE.fO) : b1.pm.pq(fxTerritorialIncomeScale.encoded, aE.fO)), af
-	.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
+	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && bi.kj() % 10 == 3) {
+		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxHasNeutral = !1, fxBotCandidates = [], fxSeenBots = new Set, fxBorder = ah.h7[fxPlayer], fxDirections = ad.fT, fxBorderIndex = fxBorder
+				.length - 1; 0 <= fxBorderIndex; fxBorderIndex--)
+			for (var fxDirection = 3; 0 <= fxDirection; fxDirection--) {
+				var fxNeighbor = fxBorder[fxBorderIndex] + fxDirections[fxDirection];
+				ad.fI(fxNeighbor) ? fxHasNeutral = !0 : ad.h1(fxNeighbor) && (fxNeighbor = ad.fJ(fxNeighbor)) >= aE.km && fxNeighbor < aE.fO && !fxSeenBots.has(fxNeighbor) && bD.gn.hd(fxNeighbor) && bD.gn.lQ(fxPlayer, fxNeighbor) && (fxSeenBots.add(
+					fxNeighbor), fxBotCandidates.push({
+					id: fxNeighbor,
+					balance: ah.hT[fxNeighbor],
+					territory: ah.hF[fxNeighbor],
+					existingAttack: ae.hU(fxPlayer, fxNeighbor)
+				}))
+			}
+		var fxTerritorialIncomeScale, fxArmyIncomeScale, fxAutoExpand = __fx.autoExpand.planBot(fxTick, fxBalance, aS.hv(), fxBotCandidates),
+			fxAutoExpandTarget = null === fxAutoExpand ? aE.fO : fxAutoExpand.target;
+		null === fxAutoExpand && fxHasNeutral && (fxArmyIncomeScale = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer], fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 ===
+			aE.data.tIncomeType ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer], fxArmyIncomeScale = __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxArmyIncomeScale, fxTerritorialIncomeScale),
+			fxAutoExpand = __fx.autoExpand.plan(fxTick, fxBalance, fxTerritory, fxArmyIncomeScale, aE.fO)), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded,
+			fxAutoExpandTarget))
+	}
+	af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
 		.ed(), bi.ed()
 }
 
@@ -1221,8 +1236,8 @@ function ph() {
 	this.hs = function(player, fD) {
 		bD.gn.hc(0) && bD.gn.hd(player) && bP.j9(fD) && (bC.qe.qf(0, player, fD), aE.qg.eh(player, fD))
 	}, this.hy = function(player, j4, jv) {
-		bD.gn.hc(1) && bD.gn.hd(player) && bD.gn.qh(player, jv) && (player === aE.fB && jv === aE.fO && __fx.autoExpand.acknowledge(j4), bD.gn.mu(player, j4, 12, 0)) && bD.gn.qi(player, jv) && ((jv = ae.k7(player, bR.fN[0])) || ae.kQ(player)) &&
-			(ah.qj[player]++, bC.qe.qf(1, player, j4, bR.fN[0]), ap.jX.jl(player, jv)) && (bD.gn.mw(player), bg.qk(player, j4), ap.jX.jr(player))
+		bD.gn.hc(1) && bD.gn.hd(player) && bD.gn.qh(player, jv) && (player === aE.fB && __fx.autoExpand.acknowledge(jv, j4), bD.gn.mu(player, j4, 12, 0)) && bD.gn.qi(player, jv) && ((jv = ae.k7(player, bR.fN[0])) || ae.kQ(player)) && (ah.qj[
+			player]++, bC.qe.qf(1, player, j4, bR.fN[0]), ap.jX.jl(player, jv)) && (bD.gn.mw(player), bg.qk(player, j4), ap.jX.jr(player))
 	}, this.pt = function(player, j4, ps) {
 		bD.gn.hc(1) && bD.gn.hd(player) && aE.iL && bD.gn.qh(player, ps) && bD.gn.ql(player, ps) && bD.gn.qB(player, bD.gn.j3(player, j4), ps) && ao.eh(ps, bR.fy[0]) && (bC.qe.qf(2, player, j4, ps), af.pr(player, ps))
 	}, this.i3 = function(player, j4, pv) {
