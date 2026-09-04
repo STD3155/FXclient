@@ -1010,7 +1010,7 @@ function my() {
 }
 
 function n0() {
-	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3)) {
+	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3) && __fx.autoExpand.canAttempt(bi.kj())) {
 		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxSeenNeutral = new Set, fxCompetitorNearby = !1, fxBotCandidates = [], fxSeenBots = new Set,
 				fxBorder = ah.h7[fxPlayer], fxDirections = ad.fT, fxBorderIndex = fxBorder.length - 1; 0 <= fxBorderIndex; fxBorderIndex--)
 			for (var fxDirection = 3; 0 <= fxDirection; fxDirection--) {
@@ -1025,12 +1025,12 @@ function n0() {
 			}
 		var fxNeutralLayerSizes = [fxSeenNeutral.size];
 		if (!fxIsCorrectionTick && 0 < fxSeenNeutral.size)
-			for (var fxNeutralLayer = Array.from(fxSeenNeutral), fxLayerDepth = 1; fxLayerDepth < 3; fxLayerDepth++) {
+			for (var fxNeutralLayer = Array.from(fxSeenNeutral), fxLayerDepth = 1; fxLayerDepth < 5; fxLayerDepth++) {
 				for (var fxNextNeutralLayer = [], fxLayerIndex = fxNeutralLayer.length - 1; 0 <= fxLayerIndex; fxLayerIndex--)
 					for (var fxLayerDirection = 3; 0 <= fxLayerDirection; fxLayerDirection--) {
 						var fxLayerNeighbor = fxNeutralLayer[fxLayerIndex] + fxDirections[fxLayerDirection];
 						ad.fW(fxLayerNeighbor) && (ad.fI(fxLayerNeighbor) ? fxSeenNeutral.has(fxLayerNeighbor) || (fxSeenNeutral.add(fxLayerNeighbor), fxNextNeutralLayer.push(fxLayerNeighbor)) : ad.h1(fxLayerNeighbor) && (fxLayerNeighbor = ad.fJ(
-							fxLayerNeighbor)) < aE.km && fxLayerNeighbor !== fxPlayer && bD.gn.hd(fxLayerNeighbor) && bD.gn.lQ(fxPlayer, fxLayerNeighbor) && (fxCompetitorNearby = !0))
+							fxLayerNeighbor), fxLayerDepth <= 2) && fxLayerNeighbor < aE.km && fxLayerNeighbor !== fxPlayer && bD.gn.hd(fxLayerNeighbor) && bD.gn.lQ(fxPlayer, fxLayerNeighbor) && (fxCompetitorNearby = !0))
 					}
 				if (fxNeutralLayerSizes.push(fxNextNeutralLayer.length), 0 === (fxNeutralLayer = fxNextNeutralLayer).length) break
 			}
