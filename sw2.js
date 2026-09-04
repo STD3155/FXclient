@@ -1,5 +1,5 @@
 const cachePrefix = "fxclient-";
-const cacheName = cachePrefix + "1788475033221"; // timestamp gets replaced by the build script
+const cacheName = cachePrefix + "1788507099201"; // timestamp gets replaced by the build script
 const cachePromise = caches.open(cacheName);
 
 self.addEventListener("message", (e) => {
@@ -10,6 +10,15 @@ self.addEventListener("fetch", (e) => {
   const request = e.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (request.mode === "navigate") {
+    e.respondWith(
+      fetch(request).then(async (response) => {
+        if (response.ok) await (await cachePromise).put(request, response.clone());
+        return response;
+      }).catch(async () => (await cachePromise).match(request))
+    );
+    return;
+  }
   e.respondWith(
     (async () => {
       const cache = await cachePromise;
