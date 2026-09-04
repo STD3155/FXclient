@@ -3,8 +3,10 @@ import test from "node:test";
 import {
   calculateAutoExpandAttack,
   calculateNextIncome,
+  calculateProactiveExpandAttack,
   createAutoExpandController,
-  findAutoExpandBotAttack
+  findAutoExpandBotAttack,
+  projectBalance
 } from "../src/autoExpand.js";
 
 test("does nothing while the next income remains at or below 100% density", () => {
@@ -31,6 +33,24 @@ test("projects only the income that is actually paid on the next income tick", (
 
 test("includes custom army and territorial income scales", () => {
   assert.equal(calculateNextIncome(10_000, 64, 100, 93, 16, 48), 204);
+});
+
+test("projects two complete income cycles ahead", () => {
+  assert.equal(projectBalance(9_000, 100, 100, 0), 9_180);
+  assert.equal(projectBalance(9_000, 100, 100, 90), 9_281);
+});
+
+test("starts a minimal reliable neutral-front expansion before the projected cap", () => {
+  const attack = calculateProactiveExpandAttack(9_900, 100, 10_100, 10);
+  assert.equal(attack.projectedOverflow, 100);
+  assert.equal(attack.amount, 30);
+  assert.equal(attack.expectedTerritoryGain, 10);
+  assert.ok(Math.floor(9_900 * (attack.encoded + 1) / 1024) >= 30);
+});
+
+test("does not start proactive expansion without a projected overflow or enough available troops", () => {
+  assert.equal(calculateProactiveExpandAttack(9_900, 100, 10_000, 10), null);
+  assert.equal(calculateProactiveExpandAttack(100, 1, 200, 40), null);
 });
 
 test("plans at tick three and never sends twice in one income cycle", () => {
@@ -97,4 +117,18 @@ test("tracks bot targets while waiting for the authoritative server event", () =
   assert.equal(controller.planBot(13, 10_000, 1023, candidates), null);
   controller.acknowledge(8, attack.encoded);
   assert.notEqual(controller.planBot(23, 10_000, 1023, candidates), null);
+});
+
+test("allows the tick-three correction after an acknowledged proactive expansion", () => {
+  const controller = createAutoExpandController();
+  const proactive = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
+  assert.notEqual(proactive, null);
+  controller.acknowledge(512, proactive.encoded);
+  assert.notEqual(controller.plan(3, 9_950, 100, 125, 512), null);
+});
+
+test("does not duplicate a proactive expansion while its server event is pending", () => {
+  const controller = createAutoExpandController();
+  assert.notEqual(controller.planProactive(0, 9_900, 100, 10_100, 10, 512), null);
+  assert.equal(controller.plan(3, 9_950, 100, 125, 512), null);
 });

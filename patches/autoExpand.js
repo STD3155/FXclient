@@ -1,6 +1,7 @@
 export default (/** @type {import('../modUtils.js').default} */ { insertCode, replaceRawCode }) => {
-    // Send early enough for a multiplayer server to process the expansion
-    // before income is paid. The controller permits only one send per cycle.
+    // Start a small, land-aware expansion after an income tick when the
+    // two-cycle forecast reaches the growth limit. Tick three remains the
+    // authoritative safety correction and bot-opportunity pass.
     insertCode(`function n0() {
         b2.ed();
         aH.ed();
@@ -35,12 +36,13 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
         bC.ed();
         bi.ed();
         }`, `if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
-            && bi.kj() % 10 === 3) {
+            && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3)) {
             var fxPlayer = aE.fB;
             var fxTick = bi.kj();
+            var fxIsCorrectionTick = fxTick % 10 === 3;
             var fxBalance = ah.hT[fxPlayer];
             var fxTerritory = ah.hF[fxPlayer];
-            var fxHasNeutral = false;
+            var fxSeenNeutral = new Set();
             var fxBotCandidates = [];
             var fxSeenBots = new Set();
             var fxBorder = ah.h7[fxPlayer];
@@ -49,8 +51,8 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                 for (var fxDirection = 3; fxDirection >= 0; fxDirection--) {
                     var fxNeighbor = fxBorder[fxBorderIndex] + fxDirections[fxDirection];
                     if (ad.fI(fxNeighbor)) {
-                        fxHasNeutral = true;
-                    } else if (ad.h1(fxNeighbor)) {
+                        fxSeenNeutral.add(fxNeighbor);
+                    } else if (fxIsCorrectionTick && ad.h1(fxNeighbor)) {
                         var fxTarget = ad.fJ(fxNeighbor);
                         if (fxTarget >= aE.km && fxTarget < aE.fO && !fxSeenBots.has(fxTarget)
                             && bD.gn.hd(fxTarget) && bD.gn.lQ(fxPlayer, fxTarget)) {
@@ -65,18 +67,40 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                     }
                 }
             }
-            var fxAutoExpand = __fx.autoExpand.planBot(
-                fxTick,
-                fxBalance,
-                aS.hv(),
-                fxBotCandidates
-            );
-            var fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
-            if (fxAutoExpand === null && fxHasNeutral) {
-                var fxArmyIncomeScale = aE.data.aIncomeType === 0 ? 0
-                    : aE.data.aIncomeType === 1 ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer];
-                var fxTerritorialIncomeScale = aE.data.tIncomeType === 0 ? 32
-                    : aE.data.tIncomeType === 1 ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer];
+            var fxArmyIncomeScale = aE.data.aIncomeType === 0 ? 0
+                : aE.data.aIncomeType === 1 ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer];
+            var fxTerritorialIncomeScale = aE.data.tIncomeType === 0 ? 32
+                : aE.data.tIncomeType === 1 ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer];
+            var fxAutoExpand = null;
+            var fxAutoExpandTarget = aE.fO;
+            if (!fxIsCorrectionTick && fxSeenNeutral.size > 0) {
+                var fxProjectedBalance = __fx.autoExpand.projectBalance(
+                    fxBalance,
+                    fxTerritory,
+                    af.aCn(fxPlayer),
+                    fxTick,
+                    fxArmyIncomeScale,
+                    fxTerritorialIncomeScale,
+                    2
+                );
+                fxAutoExpand = __fx.autoExpand.planProactive(
+                    fxTick,
+                    fxBalance,
+                    fxTerritory,
+                    fxProjectedBalance,
+                    fxSeenNeutral.size,
+                    aE.fO
+                );
+            } else if (fxIsCorrectionTick) {
+                fxAutoExpand = __fx.autoExpand.planBot(
+                    fxTick,
+                    fxBalance,
+                    aS.hv(),
+                    fxBotCandidates
+                );
+                fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
+            }
+            if (fxAutoExpand === null && fxIsCorrectionTick && fxSeenNeutral.size > 0) {
                 var fxNextIncome = __fx.autoExpand.calculateNextIncome(
                     fxBalance,
                     fxTerritory,
