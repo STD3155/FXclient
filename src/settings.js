@@ -1,895 +1,145 @@
-import { KeybindsInput } from "./keybindsInput.js";
-import winCounter from "./winCounter.js";
 import WindowManager from "./windowManager.js";
-import versionData from '../version.json';
-import { displayChangelog } from './changelog.js';
-import replayHistory from './replayHistory.js'
-import { LobbyReminderRulesInput } from './lobbyReminderRulesInput.js';
-import { FollowedAccountNicknames } from './followedAccounts.js';
-import notifications from './notifications.js';
+import notifications from "./notifications.js";
+import { requireElement } from "./dom.js";
+import { createSettingsDefinitions } from "./settings/definitions.js";
+import { createQuickEmojis } from "./settings/quickEmojis.js";
+import {
+  clearSettings,
+  exportSettings,
+  loadSettings,
+  parseSettingsFile,
+  saveSettings
+} from "./settings/storage.js";
+import { createSettingsUi } from "./settings/ui.js";
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
+let settings = loadSettings();
 
-const defaultSettings = {
-  //"showBotDonations": false,
-  displayWinCounter: true,
-  displayTickNumber: true,
-  useFullscreenMode: false,
-  hoveringTooltip: true,
-  //"hideAllLinks": false,
-  realisticNames: false,
-  showPlayerDensity: true,
-  showPlayerGrowth: true,
-  playerStatsMode: "both",
-  adaptivePlayerStats: true,
-  coloredDensity: true,
-  densityDisplayStyle: "absoluteQuotient",
-  hideBotNames: false,
-  highlightClanSpawns: false,
-  highlightDuplicateIps: false,
-  detailedTeamPercentage: false,
-  openDonationHistoryFromLb: true,
-  //"customMapFileBtn": true
-  customBackgroundUrl: "",
-  keybindButtons: false,
-  attackPercentageKeybinds: [],
-  startingPercentageEnabled: false,
-  startingPercentage: 50,
-  hidePropagandaPopup: false,
-  showReplayTimebar: true,
-  customQuickEmojisEnabled: false,
-  customQuickEmojis: [],
-  lobbyReminderRules: [],
-  mutePingAll: false,
-  mutePingEveryone: false,
-  mutePingRoom: false,
-  mutePingClan: false,
-  mutePingLanguage: false,
-  mutePingDirect: false,
-  hideInappropriateNames: false,
-  followedAccountNicknames: {}
-};
-
-function normalizeSettings(value) {
-  if (value === null || typeof value !== "object" || Array.isArray(value))
-    throw new TypeError("Settings must be a JSON object");
-  const normalized = {};
-  Object.entries(defaultSettings).forEach(([key, defaultValue]) => {
-    const candidate = value[key];
-    if (Array.isArray(defaultValue))
-      normalized[key] = Array.isArray(candidate) ? candidate : defaultValue.slice();
-    else if (defaultValue !== null && typeof defaultValue === "object")
-      normalized[key] = candidate !== null && typeof candidate === "object" && !Array.isArray(candidate)
-        ? candidate : { ...defaultValue };
-    else
-      normalized[key] = typeof candidate === typeof defaultValue ? candidate : defaultValue;
-  });
-  // Keep these two legacy keys until the migration below has run once.
-  if (Array.isArray(value.emojiBar)) normalized.emojiBar = value.emojiBar;
-  if (typeof value.customEmojiBar === "boolean") normalized.customEmojiBar = value.customEmojiBar;
-  const statModes = ["off", "growth", "density", "both"];
-  if (!statModes.includes(value.playerStatsMode)) {
-    const growth = value.showPlayerGrowth !== false;
-    const density = value.showPlayerDensity !== false;
-    normalized.playerStatsMode = growth && density ? "both" : growth ? "growth" : density ? "density" : "off";
-  }
-  normalized.attackPercentageKeybinds = normalized.attackPercentageKeybinds
-    .filter((entry) => entry !== null && typeof entry === "object")
-    .map((entry) => ({
-      key: typeof entry.key === "string" ? entry.key : "",
-      type: entry.type === "relative" ? "relative" : "absolute",
-      value: Number.isFinite(Number(entry.value)) ? Number(entry.value) : 0.8,
-    }));
-  normalized.lobbyReminderRules = normalized.lobbyReminderRules
-    .filter((entry) => entry !== null && typeof entry === "object");
-  normalized.customQuickEmojis = normalized.customQuickEmojis
-    .map((entry) => Number(entry?.code ?? entry))
-    .filter(Number.isFinite)
-    .slice(0, 9);
-  return normalized;
-}
-
-let settings = { ...defaultSettings };
-const storedSettings = localStorage.getItem("fx_settings");
-if (storedSettings !== null) {
-  try {
-    settings = normalizeSettings(JSON.parse(storedSettings));
-  } catch (error) {
-    console.warn("Ignoring invalid saved settings:", error);
-    localStorage.removeItem("fx_settings");
-  }
-}
-__fx.settings = settings;
-const discontinuedSettings = ["hideAllLinks", "fontName", "showPlayerDensity", "showPlayerGrowth"];
-__fx.makeMainMenuTransparent = false;
-
-// https://stackoverflow.com/a/34156339
-function saveFile(content, fileName, contentType) {
-  var a = document.createElement("a");
-  var file = new Blob([content], { type: contentType });
-  a.href = URL.createObjectURL(file);
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-function createButton(text, action) {
-    const button = document.createElement("button");
-    button.textContent = text;
-    button.addEventListener("click", action);
-    return button;
-}
-
-const CELL = 2.35;
-const PANEL_STYLE = { display: "grid", gridAutoRows: CELL + "em", gap: CELL / 3 + "em",
-  padding: CELL / 6 + "em", width: "max-content", background: "rgba(0, 0, 0, 0.75)",
-  border: "2px solid white", transition: "none", animation: "none" };
-const CELL_STYLE = { display: "flex", alignItems: "center", justifyContent: "center",
-  fontSize: CELL * 0.89 + "em", lineHeight: "1", cursor: "pointer", userSelect: "none",
-  transition: "none", animation: "none" };
-const ICON_BASE = 1011;
-const ICON_COUNT = 13;
-const MORE_CODE = ICON_BASE + ICON_COUNT;
-const tileUrls = {};
-function tileFor(code) {
-  if (code < ICON_BASE || code > MORE_CODE) return "";
-  if (!tileUrls[code]) {
-    const canvas = window[dictionary.emojiHolder]?.[dictionary.emojiPicker]?.[dictionary.emojiTiles]?.[code - ICON_BASE];
-    if (canvas) tileUrls[code] = canvas.toDataURL();
-  }
-  return tileUrls[code] || "";
-}
-
-function CustomQuickEmojis(container) {
-  const label = document.createElement("label");
-  label.className = "checkbox";
-  label.append("Use custom quick emojis ");
-  const note = document.createElement("small");
-  note.innerText = "Choose the 9 emojis shown in the in-game quick-emoji bar, in order, instead of them being picked automatically based on usage. Click \"Save Settings\" below to apply.";
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  const checkmark = document.createElement("span");
-  checkmark.className = "checkmark";
-  label.append(document.createElement("br"), note, checkbox, checkmark);
-  container.append(label, document.createElement("br"));
-
-  const picker = document.createElement("div");
-  Object.assign(picker.style,
-    { display: "none", margin: "8px 0", transition: "none", animation: "none" });
-  container.append(picker);
-
-  const slotsRow = document.createElement("div");
-  Object.assign(slotsRow.style, PANEL_STYLE,
-    { gridTemplateColumns: "repeat(9, " + CELL + "em)", marginBottom: CELL / 3 + "em" });
-  const grid = document.createElement("div");
-  Object.assign(grid.style, PANEL_STYLE,
-    { gridTemplateColumns: "repeat(10, " + CELL + "em)", display: "none" });
-  picker.append(slotsRow, grid);
-
-  const slots = [];
-  const codes = new Array(9).fill(null);
-  let options = [];
-  let armed = null;
-  let page = 1;
-
-  const quickEmojis = () => __fx.quickEmojis || {};
-  const isFlag = (code) => code < (quickEmojis().emojiBaseCode ?? 676);
-  const glyphFor = (code) =>
-    isFlag(code)
-      ? String.fromCodePoint(0x1f1e6 + Math.floor(code / 26), 0x1f1e6 + (code % 26))
-      : (quickEmojis().emojiList ?? [])[code - (quickEmojis().emojiBaseCode ?? 676)] ?? "";
-
-  function paint(cell, code, round = true) {
-    const tile = code >= ICON_BASE && code <= MORE_CODE;
-    const tileUrl = tile ? tileFor(code) : "";
-    cell.innerHTML = "";
-    cell.textContent = "";
-    cell.style.backgroundColor = !tile ? "transparent"
-      : code === MORE_CODE ? "rgba(0, 180, 0, 0.6)" : "rgba(0, 0, 0, 0.6)";
-    if (round) cell.style.borderRadius = tile ? "50%" : "";
-    if (tileUrl) {
-      const img = document.createElement("img");
-      img.src = tileUrl;
-      img.alt = "";
-      Object.assign(img.style, { width: "100%", height: "100%", objectFit: "contain" });
-      cell.append(img);
-    } else if (!tile) {
-      cell.textContent = glyphFor(code);
-    }
-  }
-
-  function makeCell(code, onClick) {
-    const cell = document.createElement("div");
-    Object.assign(cell.style, CELL_STYLE);
-    paint(cell, code);
-    cell.addEventListener("click", onClick);
-    return cell;
-  }
-
-  for (let i = 0; i < 9; i++) {
-    const slot = document.createElement("div");
-    Object.assign(slot.style, CELL_STYLE);
-    slot.style.borderRadius = "0";
-    slot.addEventListener("click", () => (armed === i ? close() : open(i)));
-    slots.push(slot);
-    slotsRow.append(slot);
-  }
-
-  function open(index) {
-    build();
-    page = 1;
-    renderPage();
-    arm(index);
-    grid.style.display = "grid";
-  }
-
-  function close() {
-    arm(null);
-    grid.style.display = "none";
-  }
-
-  function arm(index) {
-    armed = index;
-    slots.forEach((slot, i) => {
-      slot.style.boxShadow = i === index ? "inset 0 0 0 2px rgb(0, 200, 0)" : "";
-    });
-  }
-
-  function renderPage() {
-    grid.textContent = "";
-    if (!options.length) return;
-    let end = 49 * page;
-    if (end - 49 >= options.length) {
-      page = 1;
-      end = 49;
-    }
-    end = Math.min(end, options.length);
-    options.slice(Math.max(0, end - 49), end)
-      .forEach((code) => grid.append(makeCell(code, () => select(code))));
-    grid.append(makeCell(MORE_CODE, () => {
-      page++;
-      renderPage();
-    }));
-  }
-
-  function select(code) {
-    if (armed === null) return;
-    codes[armed] = code;
-    paint(slots[armed], code, false);
-    close();
-  }
-
-  function build() {
-    if (options.length) return;
-    const { emojiList = [], emojiBaseCode = 676, realFlagCodes = [] } = quickEmojis();
-    if (!emojiList.length) return;
-    options = Array.from({ length: ICON_COUNT }, (unused, i) => ICON_BASE + i)
-      .concat(emojiList.map((unused, i) => emojiBaseCode + i), realFlagCodes);
-  }
-
-  function paintSlots() {
-    slots.forEach((slot, i) => {
-      if (codes[i] === null) codes[i] = options[i] ?? ICON_BASE + i;
-      paint(slot, codes[i], false);
-    });
-  }
-
-  function updateVisibility() {
-    picker.style.display = checkbox.checked ? "block" : "none";
-  }
-  checkbox.addEventListener("change", updateVisibility);
-
-  this.save = function (targetSettings) {
-    targetSettings.customQuickEmojisEnabled = checkbox.checked;
-    targetSettings.customQuickEmojis = codes.slice();
-  };
-
-  this.update = function (currentSettings) {
-    checkbox.checked = !!currentSettings.customQuickEmojisEnabled;
-    updateVisibility();
-    (currentSettings.customQuickEmojis || []).forEach((entry, i) => {
-      const code = Number(entry?.code ?? entry);
-      if (i < 9 && !isNaN(code)) codes[i] = code;
-    });
-    build();
-    paintSlots();
-    close();
-  };
-}
-
-function StartingPercentageInput(container) {
-  const label = document.createElement("label");
-  label.className = "checkbox";
-  label.append("Custom starting attack percentage ");
-  const note = document.createElement("small");
-  note.innerText = "Sets a fixed attack percentage for the troop bar at the start of every game.";
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  const checkmark = document.createElement("span");
-  checkmark.className = "checkmark";
-  label.append(document.createElement("br"), note, checkbox, checkmark);
-  container.append(label, document.createElement("br"));
-
-  const inputRow = document.createElement("div");
-  Object.assign(inputRow.style, { display: "none", transition: "none", animation: "none" });
-  const input = document.createElement("input");
-  input.type = "number";
-  input.min = "0";
-  input.max = "100";
-  input.step = "0.1";
-  input.placeholder = "50";
-  inputRow.append("Percentage (%): ", input);
-  container.append(inputRow, document.createElement("br"));
-
-  function updateVisibility() {
-    inputRow.style.display = checkbox.checked ? "block" : "none";
-  }
-  checkbox.addEventListener("change", () => {
-    if (checkbox.checked && input.value.trim() === "") input.value = "50";
-    updateVisibility();
-  });
-
-  this.save = function (targetSettings) {
-    targetSettings.startingPercentageEnabled = checkbox.checked;
-    targetSettings.startingPercentage = input.value.trim() === "" ? 50 : Number(input.value);
-  };
-
-  this.update = function (currentSettings) {
-    checkbox.checked = !!currentSettings.startingPercentageEnabled;
-    input.value = currentSettings.startingPercentage ?? 50;
-    updateVisibility();
-  };
-}
-
-function SectionHeader(text) {
-  const renderSection = function (container) {
-    const title = document.createElement("p");
-    const heading = document.createElement("b");
-    heading.innerText = text;
-    title.append(heading);
-    container.append(title);
-  };
-  renderSection.isSectionHeader = true;
-  return renderSection;
-}
-
-function PerformancePresets(container) {
-  const label = document.createElement("small");
-  label.textContent = "Quick presets: ";
-  const presets = {
-    Performance: { playerStatsMode: "growth", adaptivePlayerStats: true, coloredDensity: false, hoveringTooltip: false },
-    Balanced: { playerStatsMode: "both", adaptivePlayerStats: true, coloredDensity: true, hoveringTooltip: true },
-    "Maximum info": { playerStatsMode: "both", adaptivePlayerStats: false, coloredDensity: true, hoveringTooltip: true }
-  };
-  container.append(label);
-  Object.entries(presets).forEach(([name, values]) => {
-    container.append(createButton(name, () => settingsManager.applyPreset(name, values)));
-  });
-}
-
-function createCheckboxRow(labelText, note) {
-  const label = document.createElement("label");
-  label.className = "checkbox";
-  label.append(labelText + " ");
-  if (note) {
-    const noteElement = document.createElement("small");
-    noteElement.innerText = note;
-    label.append(document.createElement("br"), noteElement);
-  }
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  const checkmark = document.createElement("span");
-  checkmark.className = "checkmark";
-  label.append(checkbox, checkmark);
-  return { label, checkbox };
-}
-
-function MutePingSection(container) {
-  const pingTypes = [
-    { key: "mutePingEveryone", label: "Mute @all, @everyone and @0ya pings" },
-    { key: "mutePingRoom", label: "Mute @room1 - @room4 pings" },
-    { key: "mutePingClan", label: "Mute clan pings (@[TAG])" },
-    { key: "mutePingLanguage", label: "Mute language pings (@en, @de, ...)" },
-    { key: "mutePingDirect", label: "Mute pings of your username" }
-  ];
-
-  const master = createCheckboxRow("Mute all pings");
-  container.append(master.label, document.createElement("br"));
-
-  const subCheckboxes = {};
-  const savedState = {};
-  pingTypes.forEach(({ key, label, note }) => {
-    const row = createCheckboxRow(label, note);
-    container.append(row.label, document.createElement("br"));
-    subCheckboxes[key] = row.checkbox;
-    row.checkbox.addEventListener("change", () => savedState[key] = row.checkbox.checked);
-  });
-
-  function applyMasterState() {
-    const allMuted = master.checkbox.checked;
-    Object.keys(subCheckboxes).forEach(key => {
-      subCheckboxes[key].checked = allMuted ? true : (savedState[key] ?? false);
-      subCheckboxes[key].disabled = allMuted;
-    });
-  }
-  master.checkbox.addEventListener("change", () => {
-    if (master.checkbox.checked) Object.keys(subCheckboxes).forEach(key => savedState[key] = subCheckboxes[key].checked);
-    applyMasterState();
-  });
-
-  this.update = function (settings) {
-    Object.keys(subCheckboxes).forEach(key => savedState[key] = !!settings[key]);
-    master.checkbox.checked = !!settings.mutePingAll;
-    applyMasterState();
-  };
-  this.save = function (targetSettings) {
-    targetSettings.mutePingAll = master.checkbox.checked;
-    Object.keys(subCheckboxes).forEach(key => {
-      targetSettings[key] = master.checkbox.checked ? savedState[key] : subCheckboxes[key].checked;
-    });
-  };
-}
-
-function ReplayHistoryList(container) {
-  const title = document.createElement("p");
-  title.innerHTML = "<b>Saved Replays</b> (auto-saves your last 5 games)";
-  container.append(title);
-
-  const list = document.createElement("div");
-  container.append(list);
-
-  function formatTime(timestamp) {
-    const minutes = Math.floor((Date.now() - timestamp) / 60000);
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return minutes + "m ago";
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return hours + "h ago";
-    return Math.floor(hours / 24) + "d ago";
-  }
-
-  function render() {
-    list.innerHTML = "";
-    const replays = replayHistory.getAll();
-    if (!replays.length) {
-      const empty = document.createElement("small");
-      empty.innerText = "No replays saved yet. Finish a game and it'll show up here.";
-      list.append(empty);
-      return;
-    }
-    replays.forEach((replay) => {
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.gap = "6px";
-      row.style.marginBottom = "4px";
-
-      const label = document.createElement("small");
-      label.innerText = formatTime(replay.timestamp);
-      label.style.flex = "1";
-
-      const loadBtn = createButton("Load", () => {
-        WindowManager.closeWindow("settings");
-        replayHistory.load(replay.data);
-      })
-      const copyBtn = createButton("Copy", () => {
-          navigator.clipboard.writeText(replay.data).then(() => {
-          copyBtn.innerText = "Copied!";
-          setTimeout(() => (copyBtn.innerText = "Copy"), 1500);
-        }).catch(() => notifications.show("Could not copy the replay", "error"));
-      });
-      const deleteBtn = createButton("Delete", () => {
-        replayHistory.remove(replay.timestamp);
-        render();
-      });
-      const downloadBtn = createButton("Download", () =>
-        saveFile(replay.data, `replay_${replay.timestamp}.txt`, "text/plain"),
-      )
-      row.append(label, loadBtn, copyBtn, downloadBtn, deleteBtn);
-      list.append(row);
-    });
-  }
-
-  this.update = render;
-}
-
-const settingsManager = new (function () {
-  const settingsStructure = [
-    SectionHeader("Interface & performance"),
-    PerformancePresets,
-    {
-      for: "displayWinCounter",
-      type: "checkbox",
-      label: "Display win counter",
-      note: "The win counter tracks multiplayer solo wins (not in team games)",
-    },
-    {
-      type: "button",
-      text: "Reset win counter",
-      action: winCounter.removeWins,
-    },
-    {
-      for: "displayTickNumber",
-      type: "checkbox",
-      label: "Display tick number near the balance",
-    },
-    {
-      for: "useFullscreenMode",
-      type: "checkbox",
-      label: "Use fullscreen mode",
-      note: "Note: fullscreen mode will trigger after you click anywhere on the page due to browser policy restrictions.",
-    },
-    {
-      for: "hoveringTooltip",
-      type: "checkbox",
-      label: "Hovering tooltip",
-      note: "Display map territory info constantly (on mouse hover) instead of only when right clicking on the map",
-    },
-    //{ for: "hideAllLinks", type: "checkbox", label: "Hide Links option also hides app store links" },
-    { for: "realisticNames", type: "checkbox", label: "Realistic Bot Names" },
-    CustomQuickEmojis,
-    SectionHeader("Map information"),
-    {
-      for: "playerStatsMode",
-      type: "selectMenu",
-      label: "Map stats:",
-      note: "Choose which additional values are displayed below player names.",
-      options: [
-        { value: "both", label: "Growth and density" },
-        { value: "growth", label: "Growth only" },
-        { value: "density", label: "Density only" },
-        { value: "off", label: "Off" },
-      ],
-    },
-    {
-      for: "adaptivePlayerStats",
-      type: "checkbox",
-      label: "Hide map stats at low zoom",
-      note: "Improves responsiveness by only drawing density and growth when player labels are large enough to read.",
-    },
-    {
-      for: "coloredDensity",
-      type: "checkbox",
-      label: "Colored density",
-      note: "Display the density with a color between red and green depending on the density value",
-    },
-    {
-      for: "densityDisplayStyle",
-      type: "selectMenu",
-      label: "Density value display style:",
-      tooltip: "Controls how the territorial density value should be rendered",
-      options: [
-        { value: "percentage", label: "Percentage" },
-        {
-          value: "absoluteQuotient",
-          label: "Value from 0 to 150 (BetterTT style)",
-        },
-      ],
-    },
-    { for: "hideBotNames", type: "checkbox", label: "Hide bot names" },
-    {
-      for: "highlightClanSpawns",
-      type: "checkbox",
-      label: "Highlight clan spawnpoints",
-      note: "Increases the spawnpoint glow size for members of your clan",
-    },
-    {
-      for: "highlightDuplicateIps",
-      type: "checkbox",
-      label: "Duplicate IP highlighting",
-      note: "Highlights players in the lobby's team list who share the same IP hash (the same one shown when hovering over a player's name). Each group of matching IPs gets its own color, so distinct duplicates are easy to tell apart at a glance.",
-    },
-    {
-      for: "hidePropagandaPopup",
-      type: "checkbox",
-      label: "Hide propaganda popup"
-    },
-    {
-      for: "detailedTeamPercentage", type: "checkbox",
-      label: "Detailed team pie chart percentage",
-      note: "For example: this would show 25.82% instead of 26% on the pie chart in team games"
-    },
-    {
-      for: "openDonationHistoryFromLb",
-      type: "checkbox",
-      label: "Open donation history from the leaderboard",
-      note: "Changes whether or not clicking on a player's name in the in-game leaderboard in team games will open their donation history",
-    },
-    SectionHeader("Gameplay & controls"),
-    {
-      for: "customBackgroundUrl",
-      type: "textInput",
-      label: "Custom main menu background:",
-      placeholder: "Enter an image URL here",
-      tooltip:
-        "A custom image to be shown as the main menu background instead of the currently selected map.",
-    },
-    KeybindsInput,
-    {
-      for: "keybindButtons", type: "checkbox",
-      label: "Keybind buttons", note: "Show keybind buttons above the troop selector (max 6)"
-    },
-    StartingPercentageInput,
-    SectionHeader("Replay"),
-    {
-      for: "showReplayTimebar",
-      type: "checkbox",
-      label: "Replay timebar",
-      note: "Show a seek bar when watching replays, allowing you to skip to any point of the replay. Seeking backward re-simulates the replay from the start, which can take a few seconds.",
-    },
-    SectionHeader("Lobby game reminders"),
-    LobbyReminderRulesInput,
-    SectionHeader("Muted lobby pings"),
-    MutePingSection,
-    SectionHeader("Other"),
-    {
-      for: "hideInappropriateNames",
-      type: "checkbox",
-      label: "Inappropriate name hider",
-      note: "Replaces player names that contain common offensive or inappropriate words with \"Hidden Name\".",
-    },
-    FollowedAccountNicknames,
-    ReplayHistoryList,
-    function Footer(container) {
-      const versionInfo = document.createElement("p");
-      versionInfo.innerText = `FX Client v${versionData.version}`;
-      const links = document.createElement("p");
-      links.innerHTML = `<a href="https://discord.gg/dyxcwdNKwK" target="_blank">Discord server</a> |
-        <a href="https://github.com/fxclient/FXclient#readme">Github repository</a>`;
-      const changelogButton = document.createElement("button");
-      changelogButton.innerText = "Changelog";
-      changelogButton.addEventListener("click", displayChangelog);
-      container.append(versionInfo, links, changelogButton);
-    }
-  ];
-  const settingsContainer = document.querySelector(".settings .scrollable");
-  const inputFields = {}; // (includes select menus)
-  const checkboxFields = {};
-  const customElements = [];
-  let dirtyIndicator = document.getElementById("settingsDirty");
-  if (!dirtyIndicator) {
-    dirtyIndicator = document.createElement("small");
-    dirtyIndicator.id = "settingsDirty";
-    dirtyIndicator.className = "settings-dirty d-none";
-    dirtyIndicator.textContent = "Unsaved changes";
-    document.querySelector(".settings h1")?.append(" ", dirtyIndicator);
-  }
-  let settingsUiBuilt = false;
-  function setDirty(dirty) {
-    dirtyIndicator?.classList.toggle("d-none", !dirty);
-  }
-  function buildSettingsUi() {
-    if (settingsUiBuilt) return;
-    settingsUiBuilt = true;
-    const search = document.createElement("input");
-    search.type = "search";
-    search.className = "settings-search";
-    search.placeholder = "Search settings…";
-    search.setAttribute("aria-label", "Search settings");
-    const settingsRows = [];
-    const empty = document.createElement("p");
-    empty.className = "settings-empty d-none";
-    empty.textContent = "No settings found.";
-    settingsContainer.append(search, empty);
-    settingsContainer.addEventListener("change", (event) => {
-      if (event.target !== search) setDirty(true);
-    });
-    search.addEventListener("input", () => {
-      const query = search.value.trim().toLowerCase();
-      let visible = 0;
-      settingsRows.forEach((row) => {
-        const matches = !query || row.dataset.search.includes(query);
-        row.classList.toggle("d-none", !matches);
-        if (matches && !row.classList.contains("settings-section")) visible++;
-      });
-      empty.classList.toggle("d-none", visible !== 0);
-    });
-    settingsStructure.forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "settings-row";
-      if (typeof item === "function") {
-        if (item.isSectionHeader) row.classList.add("settings-section");
-        customElements.push(new item(row));
-      } else {
-        const label = document.createElement("label");
-        if (item.tooltip) label.title = item.tooltip;
-        const isValueInput = item.type.endsWith("Input");
-        const element = document.createElement(
-          isValueInput || item.type === "checkbox"
-            ? "input"
-            : item.type === "selectMenu"
-            ? "select"
-            : "button"
-        );
-        if (item.type === "textInput") element.type = "text";
-        if (item.placeholder) element.placeholder = item.placeholder;
-        if (isValueInput || item.type === "selectMenu") inputFields[item.for] = element;
-        if (item.text) element.innerText = item.text;
-        if (item.action) element.addEventListener("click", item.action);
-        if (item.label) label.append(item.label + " ");
-        if (item.note) {
-          const note = document.createElement("small");
-          note.innerText = item.note;
-          label.append(document.createElement("br"), note);
-        }
-        if (item.options)
-          item.options.forEach((option) => {
-            const optionElement = document.createElement("option");
-            optionElement.value = option.value;
-            optionElement.innerText = option.label;
-            element.append(optionElement);
-          });
-        label.append(element);
-        if (item.type === "checkbox") {
-          element.type = "checkbox";
-          const checkmark = document.createElement("span");
-          checkmark.className = "checkmark";
-          label.className = "checkbox";
-          label.append(checkmark);
-          checkboxFields[item.for] = element;
-        } else label.append(document.createElement("br"));
-        row.append(label);
-      }
-      row.dataset.search = row.textContent.toLowerCase();
-      settingsRows.push(row);
-      settingsContainer.append(row);
-    });
-  }
-  this.applyPreset = function (name, values) {
-    buildSettingsUi();
-    Object.entries(values).forEach(([key, value]) => {
-      if (inputFields[key]) inputFields[key].value = value;
-      if (checkboxFields[key]) checkboxFields[key].checked = value;
-    });
-    setDirty(true);
-    notifications.show(`${name} preset selected — save to apply`, "success");
-  };
-  this.save = function () {
-    buildSettingsUi();
-    Object.keys(inputFields).forEach(function (key) {
-      settings[key] = inputFields[key].value.trim();
-    });
-    Object.keys(checkboxFields).forEach(function (key) {
-      settings[key] = checkboxFields[key].checked;
-    });
-    customElements.forEach((element) => element.save?.(settings));
-    this.applySettings();
-    WindowManager.closeWindow("settings");
-    discontinuedSettings.forEach((settingName) => delete settings[settingName]);
-    localStorage.setItem("fx_settings", JSON.stringify(settings));
-    notifications.showAfterReload("Settings saved", "success");
-    window.location.reload();
-  };
-
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  function handleFileSelect(event) {
-    const input = event.target;
-    /** @type {File} */
-    const selectedFile = input.files[0];
-    if (!selectedFile) return;
-
-    input.onchange = null;
-    input.value = "";
-    if (!selectedFile.name.toLowerCase().endsWith(".json"))
-      return notifications.show("Please select a JSON settings file", "error");
-    const fileReader = new FileReader();
-    fileReader.onload = async function () {
-      let result;
-      try {
-        result = JSON.parse(fileReader.result);
-        if (!await notifications.confirm("Replace all current settings with the imported file?", {
-          confirmLabel: "Import settings",
-          danger: true
-        })) return;
-        __fx.settings = settings = normalizeSettings(result);
-        localStorage.setItem("fx_settings", JSON.stringify(settings));
-        notifications.showAfterReload("Settings imported", "success");
-        window.location.reload();
-      } catch (error) {
-        notifications.show("Settings import failed: " + error.message, "error", 5000);
-      }
-    };
-    fileReader.readAsText(selectedFile);
-  }
-  this.importFromFile = function () {
-    fileInput.onchange = handleFileSelect;
-    fileInput.click();
-  };
-  this.exportToFile = function () {
-    saveFile(
-      JSON.stringify(settings),
-      "FX_client_settings.json",
-      "application/json"
-    );
-  };
-
-  this.syncFields = function () {
-    buildSettingsUi();
-    Object.keys(inputFields).forEach(function (key) {
-      inputFields[key].value = settings[key];
-    });
-    Object.keys(checkboxFields).forEach(function (key) {
-      checkboxFields[key].checked = settings[key];
-    });
-    customElements.forEach((element) => {
-      try {
-        element.update?.(settings);
-      } catch (error) {
-        console.warn("Could not load a settings section:", error);
-      }
-    });
-    setDirty(false);
-  };
-  this.resetAll = async function () {
-    if (!await notifications.confirm("Reset all settings to their defaults?", {
-      confirmLabel: "Reset settings",
-      danger: true
-    })) return;
-    localStorage.removeItem("fx_settings");
-    notifications.showAfterReload("Settings reset", "success");
-    window.location.reload();
-  };
-  this.applySettings = function () {
-    if (settings.customBackgroundUrl !== "") {
-      document.body.style.backgroundImage =
-        "url(" + settings.customBackgroundUrl + ")";
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-    }
-    __fx.makeMainMenuTransparent = settings.customBackgroundUrl !== "";
-  };
-
-  if (settings.useFullscreenMode) tryEnterFullscreen();
-})();
-
-export function tryEnterFullscreen() {
-  if (document.fullscreenElement !== null || !document.fullscreenEnabled) return
-  document.documentElement
-    .requestFullscreen({ navigationUI: "hide" })
-    .then(() => console.log("Fullscreen mode activated"))
-    .catch((error) => console.warn("Could not enter fullscreen mode:", error))
-}
-
-const openCustomBackgroundFilePicker = () => {
-  const fileInput = document.getElementById("customBackgroundFileInput");
-  fileInput.click();
-  fileInput.addEventListener("change", handleFileSelect);
-};
-function handleFileSelect(event) {
-  const fileInput = event.target;
-  const selectedFile = fileInput.files[0];
-  console.log(fileInput.files);
-  console.log(fileInput.files[0]);
-  if (selectedFile) {
-    const fileUrl = URL.createObjectURL(selectedFile);
-    console.log("File URL:", fileUrl);
-    fileInput.value = "";
-    fileInput.removeEventListener("change", handleFileSelect);
-  }
-}
-
-WindowManager.add({
-  name: "settings",
-  element: document.querySelector(".settings"),
-  beforeOpen: function () {
-    settingsManager.syncFields();
-  },
-});
-
-// migrate old emoji settings to new
-if (settings.emojiBar !== undefined || settings.customEmojiBar !== undefined) {
+function migrateLegacyEmojiSettings() {
+  if (settings.emojiBar === undefined && settings.customEmojiBar === undefined) return;
   if (settings.customQuickEmojis.length === 0 && !settings.customQuickEmojisEnabled) {
-    if (Array.isArray(settings.emojiBar) && settings.emojiBar.length === 9) settings.customQuickEmojis = settings.emojiBar;
+    if (Array.isArray(settings.emojiBar) && settings.emojiBar.length === 9)
+      settings.customQuickEmojis = settings.emojiBar;
     if (settings.customEmojiBar) settings.customQuickEmojisEnabled = true;
   }
   delete settings.emojiBar;
   delete settings.customEmojiBar;
-  localStorage.setItem("fx_settings", JSON.stringify(settings));
+  saveSettings(settings);
 }
+
+migrateLegacyEmojiSettings();
+__fx.settings = settings;
+__fx.makeMainMenuTransparent = false;
+
+const settingsWindow = requireElement(".settings");
+
+let settingsUi;
+const settingsManager = {
+  applyPreset(name, values) {
+    settingsUi.applyPreset(values);
+    notifications.show(`${name} preset selected — save to apply`, "success");
+  },
+
+  save() {
+    settingsUi.readInto(settings);
+    this.applySettings();
+    WindowManager.closeWindow("settings");
+    saveSettings(settings);
+    notifications.showAfterReload("Settings saved", "success");
+    window.location.reload();
+  },
+
+  importFromFile() {
+    fileInput.value = "";
+    fileInput.click();
+  },
+
+  exportToFile() {
+    exportSettings(settings);
+  },
+
+  syncFields() {
+    settingsUi.sync(settings);
+  },
+
+  async resetAll() {
+    if (!await notifications.confirm("Reset all settings to their defaults?", {
+      confirmLabel: "Reset settings",
+      danger: true
+    })) return;
+    clearSettings();
+    notifications.showAfterReload("Settings reset", "success");
+    window.location.reload();
+  },
+
+  applySettings() {
+    const customBackground = settings.customBackgroundUrl.trim();
+    document.body.style.backgroundImage = customBackground ? `url(${customBackground})` : "";
+    document.body.style.backgroundSize = customBackground ? "cover" : "";
+    document.body.style.backgroundPosition = customBackground ? "center" : "";
+    __fx.makeMainMenuTransparent = Boolean(customBackground);
+  }
+};
+
+const definitions = createSettingsDefinitions({
+  customQuickEmojis: createQuickEmojis,
+  applyPreset: (name, values) => settingsManager.applyPreset(name, values)
+});
+settingsUi = createSettingsUi({ settingsWindow, definitions });
+
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = ".json,application/json";
+fileInput.addEventListener("change", () => {
+  const selectedFile = fileInput.files?.[0];
+  if (!selectedFile) return;
+  if (!selectedFile.name.toLowerCase().endsWith(".json")) {
+    notifications.show("Please select a JSON settings file", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.addEventListener("load", async () => {
+    try {
+      const imported = parseSettingsFile(reader.result);
+      if (!await notifications.confirm("Replace all current settings with the imported file?", {
+        confirmLabel: "Import settings",
+        danger: true
+      })) return;
+      settings = imported;
+      __fx.settings = settings;
+      saveSettings(settings);
+      notifications.showAfterReload("Settings imported", "success");
+      window.location.reload();
+    } catch (error) {
+      notifications.show("Settings import failed: " + error.message, "error", 5000);
+    }
+  });
+  reader.readAsText(selectedFile);
+});
+
+WindowManager.add({
+  name: "settings",
+  element: settingsWindow,
+  beforeOpen: () => settingsManager.syncFields()
+});
+
+export function tryEnterFullscreen() {
+  if (document.fullscreenElement !== null || !document.fullscreenEnabled) return;
+  document.documentElement
+    .requestFullscreen({ navigationUI: "hide" })
+    .then(() => console.log("Fullscreen mode activated"))
+    .catch((error) => console.warn("Could not enter fullscreen mode:", error));
+}
+
+let fullscreenAttempted = false;
+document.addEventListener("mousedown", () => {
+  if (!settings.useFullscreenMode || fullscreenAttempted) return;
+  fullscreenAttempted = true;
+  tryEnterFullscreen();
+}, { passive: true, capture: true });
 
 settingsManager.applySettings();
 
 export default settingsManager;
-export function getSettings() {
-  return settings;
-}
+export const getSettings = () => settings;

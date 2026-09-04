@@ -1,6 +1,7 @@
 import WindowManager from "./windowManager.js"
 import { getVar } from "./gameInterface.js"
 import { debugWithContext } from "./debugging.js"
+import { requireElement, requireElementById } from "./dom.js"
 
 const MAX_HISTORY_PER_PLAYER = 500
 const MAX_RENDERED_ROWS = 250
@@ -43,9 +44,9 @@ function getDonationControls() {
 
 WindowManager.add({
   name: "donationHistory",
-  element: document.querySelector("#donationhistory"),
+  element: requireElementById("donationhistory"),
   beforeOpen: function (isSingleplayer) {
-    document.getElementById("donationhistory_note").style.display =
+    requireElementById("donationhistory_note").style.display =
       /*(settings.showBotDonations || isSingleplayer)*/ true ? "none" : "block"
   },
   onClose: function () {
@@ -55,7 +56,7 @@ WindowManager.add({
 
 const donationsTracker = new (function () {
   this.openedWindowPlayerID = null
-  this.contentElement = document.querySelector("#donationhistory_content")
+  this.contentElement = requireElementById("donationhistory_content")
   const { filter: filterElement, summary: summaryElement } = getDonationControls()
   this.donationHistory = Array(512)
   let resetCalled = false
@@ -158,7 +159,7 @@ const donationsTracker = new (function () {
     isSingleplayer = getVar("gIsSingleplayer"),
   ) {
     var history = donationsTracker.getHistoryOf(playerID)
-    document.querySelector("#donationhistory h1").textContent = "Donation history for " + playerNames[playerID]
+    requireElement("#donationhistory h1").textContent = "Donation history for " + playerNames[playerID]
     displayedHistory = history
     displayedPlayerID = playerID
     filterElement.value = "all"

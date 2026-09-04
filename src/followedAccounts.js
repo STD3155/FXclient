@@ -1,4 +1,3 @@
-import { getSettings } from "./settings.js";
 import WindowManager from "./windowManager.js";
 
 const NICKNAME_SEPARATOR = " - ";
@@ -30,7 +29,7 @@ function cleanUp(nicknames) {
 }
 
 function getNickname(accountName) {
-  const nicknames = getSettings().followedAccountNicknames;
+  const nicknames = window.__fx?.settings?.followedAccountNicknames;
   const nickname = nicknames === null || typeof nicknames !== "object" ? "" : nicknames[accountName];
   return typeof nickname === "string" ? nickname.trim() : "";
 }

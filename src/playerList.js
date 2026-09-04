@@ -2,11 +2,12 @@ import { getVar } from "./gameInterface.js";
 import { escapeHtml } from "./utils.js";
 import donationsTracker from "./donationsTracker.js";
 import WindowManager from "./windowManager.js";
+import { requireElementById } from "./dom.js";
 
 const playerList = new (function () {
     const playersIcon = document.createElement('img');
     playersIcon.setAttribute('src', 'assets/players_icon.png');
-    const content = document.getElementById("playerlist_content");
+    const content = requireElementById("playerlist_content");
     let search = document.getElementById("playerlist_search");
     if (!search) {
         search = document.createElement("input");
@@ -60,7 +61,7 @@ const playerList = new (function () {
 });
 WindowManager.add({
     name: "playerList",
-    element: document.getElementById("playerlist")
+    element: requireElementById("playerlist")
 });
 
 export default playerList

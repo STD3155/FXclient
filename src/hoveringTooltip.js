@@ -1,5 +1,6 @@
 import { getSettings } from "./settings.js";
 import { getVar } from "./gameInterface.js";
+import { requireElementById } from "./dom.js";
 
 const hoveringTooltip = new (function() {
     let lastShown = 0;
@@ -31,7 +32,8 @@ const hoveringTooltip = new (function() {
             this.active = false;
         }
     }
-    document.getElementById("canvasA").addEventListener("mousemove", handler.bind(this));
-    document.getElementById("canvasA").addEventListener("touchstart", handler.bind(this));
+    const canvas = requireElementById("canvasA");
+    canvas.addEventListener("mousemove", handler.bind(this));
+    canvas.addEventListener("touchstart", handler.bind(this));
 });
 export default hoveringTooltip

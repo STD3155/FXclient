@@ -1,6 +1,7 @@
 import { getVar } from "./gameInterface.js";
 import { getSettings } from "./settings.js";
 import hoveringTooltip from "./hoveringTooltip.js";
+import { requireElementById } from "./dom.js";
 
 const replay = {
     totalTicks: 0,
@@ -80,7 +81,7 @@ function createElement(tag, className, parent) {
     return element;
 }
 
-const bar = createElement("div", "flex d-none", document.getElementById("windowContainer"));
+const bar = createElement("div", "flex d-none", requireElementById("windowContainer"));
 bar.id = "replayTimebar";
 const currentTime = createElement("span", "replay-time", bar);
 const track = createElement("div", "replay-track", bar);
