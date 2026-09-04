@@ -1010,10 +1010,13 @@ function my() {
 }
 
 function n0() {
-	var fxAutoExpand;
-	b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && bi.kj() % 10 == 8 && bv.hx(aE.fB) && null !== (fxAutoExpand = __fx.autoExpand.calculate(ah.hT[aE.fB], ah.hF[aE.fB], Math.max(bO.fs(
-			af.aCn(aE.fB) * ah.hT[aE.fB], 1e4), 1) + ah.hF[aE.fB] / 10)) && (aE.l6 ? bB.pg.hy(aE.fB, fxAutoExpand.encoded, aE.fO) : b1.pm.pq(fxAutoExpand.encoded, aE.fO)), af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY
-		.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC.ed(), bi.ed()
+	var fxPlayer, fxTick, fxBalance, fxTerritory, fxArmyIncomeScale, fxTerritorialIncomeScale;
+	b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && bi.kj() % 10 == 3 && bv.hx(aE.fB) && (fxPlayer = aE.fB, fxTick = bi.kj(), fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[
+			fxPlayer], fxArmyIncomeScale = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer], fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 === aE.data.tIncomeType ? aE
+			.data.tIncomeValue : aE.data.tIncomeData[fxPlayer], fxArmyIncomeScale = __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxArmyIncomeScale, fxTerritorialIncomeScale), null !== (
+				fxTerritorialIncomeScale = __fx.autoExpand.plan(fxTick, fxBalance, fxTerritory, fxArmyIncomeScale))) && (aE.l6 ? bB.pg.hy(fxPlayer, fxTerritorialIncomeScale.encoded, aE.fO) : b1.pm.pq(fxTerritorialIncomeScale.encoded, aE.fO)), af
+	.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
+		.ed(), bi.ed()
 }
 
 function n5() {
@@ -1218,8 +1221,8 @@ function ph() {
 	this.hs = function(player, fD) {
 		bD.gn.hc(0) && bD.gn.hd(player) && bP.j9(fD) && (bC.qe.qf(0, player, fD), aE.qg.eh(player, fD))
 	}, this.hy = function(player, j4, jv) {
-		bD.gn.hc(1) && bD.gn.hd(player) && bD.gn.qh(player, jv) && bD.gn.mu(player, j4, 12, 0) && bD.gn.qi(player, jv) && ((jv = ae.k7(player, bR.fN[0])) || ae.kQ(player)) && (ah.qj[player]++, bC.qe.qf(1, player, j4, bR.fN[0]), ap.jX.jl(player,
-			jv)) && (bD.gn.mw(player), bg.qk(player, j4), ap.jX.jr(player))
+		bD.gn.hc(1) && bD.gn.hd(player) && bD.gn.qh(player, jv) && (player === aE.fB && jv === aE.fO && __fx.autoExpand.acknowledge(j4), bD.gn.mu(player, j4, 12, 0)) && bD.gn.qi(player, jv) && ((jv = ae.k7(player, bR.fN[0])) || ae.kQ(player)) &&
+			(ah.qj[player]++, bC.qe.qf(1, player, j4, bR.fN[0]), ap.jX.jl(player, jv)) && (bD.gn.mw(player), bg.qk(player, j4), ap.jX.jr(player))
 	}, this.pt = function(player, j4, ps) {
 		bD.gn.hc(1) && bD.gn.hd(player) && aE.iL && bD.gn.qh(player, ps) && bD.gn.ql(player, ps) && bD.gn.qB(player, bD.gn.j3(player, j4), ps) && ao.eh(ps, bR.fy[0]) && (bC.qe.qf(2, player, j4, ps), af.pr(player, ps))
 	}, this.i3 = function(player, j4, pv) {
@@ -3613,10 +3616,10 @@ function c4() {
 				this.yY = this.data.numberTeams, this.data.teamPlayerCount ? this.yZ = +(0 < this.data.teamPlayerCount[0]) : (this.yZ = 0, this.iL && this.l6 && (this.data.teamPlayerCount = new Uint16Array(9), this.data.teamPlayerCount.fill(1, 1,
 					this.yY + 1), aE.a5t.a5y())), this.a5r = this.km <= 2 ? 30 : this.km <= 50 ? 40 : 50, this.a5q = this.hp = this.data.selectableSpawn, this.qg = this.hp ? new a5g : null, 1 === m.dz ? this.yR = this.km : this.yR = this.data
 				.playerCount, this.yW = this.yR, this.l8 = this.yR - this.km, this.a1P = 0, this.fB = this.data.selectedPlayer, this.a1K = 0, this.a1S = 0, this.a1f = 0, this.a1F = 0, az.a5z(this.data.spawningSeed), af.di(), ah.di(), ao.di(), aj
-				.a60(), bB.pi.qU = [], bB.hr.pl = 1, __fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.economicAttack.reset(), __fx.customLobby.isActive() && __fx
-				.customLobby.hideWindow(), bj.di(), this.a1N = 1, bg.di(), a61(), ad.dj(), aq.a62(), be.di(), ad.di(), au.di(), bP.di(), bQ.di(), ap.di(), bY.a63(), aF.di(), aj.a8(), aJ.di(), aK.di(), am.a64(), bC.di(), bk.di(), bS.di(), bh.di(), a65
-				.putImageData(a66, 0, 0), aW.di(), aT.di(), aS.di(), bF.di(), ax.di(), aV.di(), aX.di(), aN.di(), aR.di(), aO.di(), aQ.di(), aM.di(), aY.di(), aG.di(), aH.di(), gU(), ae.di(), ag.di(), b5.di(), b6.di(), b2.di(), b8.di(), b9.di(), this
-				.a1g.di(), bi.a63(), aI.ng(), 0 === ah.nM[aE.fB] && aY.show(!1, !0), ag.n8(!0), aw.di(), bi.dq = !0, this.ha || this.l6 && this.hp || a1.a2.setState(1), this.a5v = 0
+				.a60(), bB.pi.qU = [], bB.hr.pl = 1, __fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.economicAttack.reset(), __fx.autoExpand.reset(), __fx.customLobby
+				.isActive() && __fx.customLobby.hideWindow(), bj.di(), this.a1N = 1, bg.di(), a61(), ad.dj(), aq.a62(), be.di(), ad.di(), au.di(), bP.di(), bQ.di(), ap.di(), bY.a63(), aF.di(), aj.a8(), aJ.di(), aK.di(), am.a64(), bC.di(), bk.di(), bS
+				.di(), bh.di(), a65.putImageData(a66, 0, 0), aW.di(), aT.di(), aS.di(), bF.di(), ax.di(), aV.di(), aX.di(), aN.di(), aR.di(), aO.di(), aQ.di(), aM.di(), aY.di(), aG.di(), aH.di(), gU(), ae.di(), ag.di(), b5.di(), b6.di(), b2.di(), b8
+				.di(), b9.di(), this.a1g.di(), bi.a63(), aI.ng(), 0 === ah.nM[aE.fB] && aY.show(!1, !0), ag.n8(!0), aw.di(), bi.dq = !0, this.ha || this.l6 && this.hp || a1.a2.setState(1), this.a5v = 0
 		}, this.a2m = function(eX) {
 			bC.qe.a68.length ? this.a5w = bC.qe.a68 : (this.a5w = bC.a69.a0p(), __fx.replayHistory.save(this.a5w)), b1.z.a6A(), bt.clear(), this.a1N = 0, bi.a6B(), a1.a2.setState(0), ab.setState(0), bX.eO.show(eX), 2 === this.a5v ? u.z.a6C(0) : 1 ===
 				this.a5v ? u.v(19) : u.v(5, 5)
