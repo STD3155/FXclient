@@ -21,6 +21,7 @@ import nameFilter from './nameFilter.js';
 import followedAccounts from './followedAccounts.js';
 import notifications from './notifications.js';
 import economicAttack from './economicAttack.js';
+import autoExpand from './autoExpand.js';
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
@@ -55,5 +56,6 @@ __fx.nameFilter = nameFilter;
 __fx.followedAccounts = followedAccounts;
 __fx.notifications = notifications;
 __fx.economicAttack = economicAttack;
+__fx.autoExpand = autoExpand;
 
 console.log('Successfully loaded FX Client');

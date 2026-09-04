@@ -66,7 +66,7 @@ function setArmed(nextArmed) {
 
 function toggle() {
   setArmed(!armed);
-  notify(armed ? "Economic attack armed — select an opponent" : "Economic attack cancelled");
+  notify(armed ? "Economic mode enabled — auto-expansion active" : "Economic mode disabled");
   return armed;
 }
 
@@ -76,11 +76,11 @@ function reset() {
 
 function resolve(normalPercentage, ownBalance, targetBalance, targetTerritory, existingAttack) {
   if (!armed) return normalPercentage;
-  setArmed(false);
 
   if (targetBalance === null || targetBalance === undefined || targetTerritory === null || targetTerritory === undefined) {
-    notify("Economic attack only works against another player", "error");
-    return null;
+    // ECO only modifies player attacks. Neutral expansion keeps the requested
+    // percentage, including percentages produced by automatic expansion.
+    return normalPercentage;
   }
 
   const attack = calculateEconomicAttack(

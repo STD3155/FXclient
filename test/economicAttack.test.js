@@ -34,13 +34,24 @@ test("rounds encoded percentages upward across integer boundaries", () => {
   assert.ok(sent >= 220);
 });
 
-test("is a one-shot mode and warns when the configured percentage caps the attack", () => {
+test("stays enabled after an attack and warns when the configured percentage is the limit", () => {
   const messages = [];
   globalThis.window = { __fx: { notifications: { show: (message) => messages.push(message) } } };
   economicAttack.reset();
   economicAttack.toggle();
   assert.equal(economicAttack.isArmed(), true);
   assert.equal(typeof economicAttack.resolve(500, 2_000, 1_000, 100, 0), "number");
-  assert.equal(economicAttack.isArmed(), false);
+  assert.equal(economicAttack.isArmed(), true);
   assert.match(messages.at(-1), /capped at/);
+  economicAttack.toggle();
+  assert.equal(economicAttack.isArmed(), false);
+});
+
+test("does not modify neutral-land attacks while enabled", () => {
+  globalThis.window = { __fx: { notifications: { show: () => {} } } };
+  economicAttack.reset();
+  economicAttack.toggle();
+  assert.equal(economicAttack.resolve(321, 5_000, null, null, 0), 321);
+  assert.equal(economicAttack.isArmed(), true);
+  economicAttack.reset();
 });

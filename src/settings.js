@@ -128,21 +128,20 @@ WindowManager.add({
   beforeOpen: () => settingsManager.syncFields()
 });
 
-function bindHomeSettingsButton(root = document) {
-  root.querySelectorAll?.("button").forEach((button) => {
-    if (button.textContent.trim() !== "FX Client settings" || button.dataset.fxSettingsBound) return;
-    button.dataset.fxSettingsBound = "true";
-    button.onclick = () => settingsManager.open();
-  });
-}
+// The game removes and re-adds its home-menu buttons. Handle them at document
+// level so their action survives every menu rebuild and upstream onclick logic.
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const button = event.target.closest("button");
+  if (!button) return;
+  const label = button.textContent.trim();
+  if (label !== "FX Client settings" && label !== "Join/Create custom lobby") return;
 
-const homeButtonObserver = new MutationObserver((records) => {
-  records.forEach((record) => record.addedNodes.forEach((node) => {
-    if (node instanceof HTMLElement) bindHomeSettingsButton(node.matches("button") ? node.parentElement : node);
-  }));
-});
-homeButtonObserver.observe(document.body, { childList: true, subtree: true });
-bindHomeSettingsButton();
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (label === "FX Client settings") settingsManager.open();
+  else window.__fx?.customLobby?.showJoinPrompt();
+}, true);
 
 export function tryEnterFullscreen() {
   if (document.fullscreenElement !== null || !document.fullscreenEnabled) return;

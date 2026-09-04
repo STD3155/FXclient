@@ -101,7 +101,11 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
       /(function \w+\((?<i>\w+),(?<fontSize>\w+),(?<x>\w+),(?<y>\w+),(?<canvas>\w+)\){)(\6\.fillText\((?<playerData>\w+)\.(?<playerNames>\w+)\[\2\],\4,\5\)),(\2<(?<game>\w+)\.(?<gHumans>\w+)&&2!==\8\.(?<playerStates>\w+)\[[^}]+)}/g,
       `$1 var ___id = $2;
         var showName = $<i> < $<game>.$<gHumans> || !__fx.settings.hideBotNames;
-        if (showName) $7, $10;
+        if (showName) $<canvas>.fillText(
+          __fx.utils.getRankedName(___id, $<playerData>.$<playerNames>[$<i>]),
+          $<x>,
+          $<y>
+        ), $10;
         var ___statsY = showName ? $<y> + $<fontSize> : $<y>;
         var ___statsColor = $<canvas>.fillStyle;
         var ___showStats = !__fx.settings.adaptivePlayerStats

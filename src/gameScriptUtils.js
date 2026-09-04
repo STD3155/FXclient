@@ -7,6 +7,26 @@ function getMaxTroops(playerTerritories, playerID) {
     return (playerTerritories[playerID] * 150).toString();
 };
 const densityCache = [];
+let playerRanks;
+const rankedNameCache = [];
+
+function setPlayerRanks(ranks) {
+    if (playerRanks === ranks) return;
+    playerRanks = ranks;
+    rankedNameCache.length = 0;
+}
+
+function getRankedName(playerID, name) {
+    const zeroBasedRank = playerRanks?.[playerID];
+    if (zeroBasedRank === undefined) return name;
+    const rank = zeroBasedRank + 1;
+    const cached = rankedNameCache[playerID];
+    if (cached?.rank === rank && cached.name === name) return cached.text;
+    const text = rank + ". " + name;
+    rankedNameCache[playerID] = { rank, name, text };
+    return text;
+}
+
 function getDensityStats(
     playerID,
     playerBalances = getVar("playerBalances"),
@@ -129,4 +149,15 @@ function getDuplicateIpHighlightColor(player, entries, ipField) {
     return getIpColors(entries, ipField).get(ip) || null;
 }
 
-export default { getMaxTroops, getDensity, getDensityStats, isHumanPlayer, isPointInRectangle, fillTextMultiline, textStyleBasedOnDensity, getDuplicateIpHighlightColor }
+export default {
+    getMaxTroops,
+    getDensity,
+    getDensityStats,
+    setPlayerRanks,
+    getRankedName,
+    isHumanPlayer,
+    isPointInRectangle,
+    fillTextMultiline,
+    textStyleBasedOnDensity,
+    getDuplicateIpHighlightColor
+}

@@ -11,6 +11,19 @@ function updateBackdrop() {
   backdrop.classList.toggle("d-none", !visible);
 }
 
+function showElement(element) {
+  const display = element.classList.contains("flex") || element.classList.contains("flex-column")
+    ? "flex"
+    : "block";
+  element.hidden = false;
+  element.style.setProperty("display", display, "important");
+}
+
+function hideElement(element) {
+  element.style.setProperty("display", "none", "important");
+  element.setAttribute("aria-hidden", "true");
+}
+
 function create(info) {
   const window = document.createElement("div");
   info.element = window;
@@ -64,7 +77,9 @@ function openWindow(windowName, ...args) {
   }
   windowObj.previousFocus = document.activeElement;
   windowObj.isOpen = true;
-  windowObj.element.style.display = null;
+  container.hidden = false;
+  container.style.removeProperty("display");
+  showElement(windowObj.element);
   windowObj.element.setAttribute("aria-hidden", "false");
   const heading = windowObj.element.querySelector("h1, h2, h3");
   if (heading && !windowObj.element.hasAttribute("aria-labelledby")) {
@@ -78,8 +93,7 @@ function closeWindow(windowName) {
   const windowObj = windows.get(windowName);
   if (!windowObj?.isOpen) return;
   windowObj.isOpen = false;
-  windowObj.element.style.display = "none";
-  windowObj.element.setAttribute("aria-hidden", "true");
+  hideElement(windowObj.element);
   windowObj.onClose?.();
   updateBackdrop();
   const previousFocus = windowObj.previousFocus;
@@ -91,8 +105,12 @@ function isWindowOpen(windowName) {
 function setWindowVisible(windowName, visible) {
   const windowObj = windows.get(windowName);
   if (!windowObj) return;
-  windowObj.element.style.display = visible ? null : "none";
-  windowObj.element.setAttribute("aria-hidden", visible ? "false" : "true");
+  if (visible) {
+    showElement(windowObj.element);
+    windowObj.element.setAttribute("aria-hidden", "false");
+  } else {
+    hideElement(windowObj.element);
+  }
 }
 function closeAll() {
   const windowList = Array.from(windows.values());
