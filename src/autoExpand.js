@@ -123,10 +123,11 @@ export function calculateProactiveExpandAttack(
   // Neutral expansion is distributed over the complete frontier. Territorial
   // requires more than two troops per frontier tile for the first wave, so
   // three per currently reachable tile is the smallest reliable click.
-  const amount = 3 * neutralFrontierTiles;
+  const minimumAmount = 3 * neutralFrontierTiles;
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
-  if (amount > available || amount > percentageLimit) return null;
+  const amount = Math.min(available, percentageLimit);
+  if (amount < minimumAmount) return null;
 
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
   return {
@@ -136,6 +137,7 @@ export function calculateProactiveExpandAttack(
     projectedBalance,
     projectedOverflow,
     expectedTerritoryGain: neutralFrontierTiles,
+    minimumAmount,
     percentageLimit
   };
 }
@@ -152,32 +154,26 @@ export function calculateOpeningExpandAttack(
   tick = Math.max(0, Math.floor(tick));
   if (balance === 0 || tick >= OPENING_END_TICK) return null;
 
-  let maxShare;
   let maxDepth;
   if (tick < 100) {
-    maxShare = 0.18;
     maxDepth = 5;
   } else if (tick < 300) {
-    maxShare = 0.12;
     maxDepth = 4;
   } else {
-    maxShare = 0.08;
     maxDepth = 3;
   }
   if (competitorNearby) {
-    maxShare = 0.20;
     maxDepth = 5;
   }
 
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
-  const phaseLimit = Math.floor(balance * maxShare);
-  const budget = Math.min(available, percentageLimit, phaseLimit);
+  const budget = Math.min(available, percentageLimit);
   if (budget <= 0) return null;
 
   let previousTiles = 0;
   let minimumAmount = 0;
-  let selectedAmount = 0;
+  let selectedMinimumAmount = 0;
   let selectedDepth = 0;
   let expectedTerritoryGain = 0;
   const depth = Math.min(maxDepth, neutralLayerSizes.length);
@@ -190,21 +186,25 @@ export function calculateOpeningExpandAttack(
     minimumAmount = Math.max(minimumAmount, 2 * previousTiles + 3 * layerSize);
     if (minimumAmount > budget) break;
     previousTiles += layerSize;
-    selectedAmount = minimumAmount;
+    selectedMinimumAmount = minimumAmount;
     selectedDepth = layer + 1;
     expectedTerritoryGain = previousTiles;
   }
-  if (selectedAmount <= 0) return null;
+  if (selectedMinimumAmount <= 0) return null;
 
-  const encoded = Math.ceil(selectedAmount * ATTACK_PARTS / balance) - 1;
+  // The terrain analysis decides whether and how far to expand. The attack
+  // size itself always follows the player's slider so one deliberate wave is
+  // sent instead of a sequence of minimum-sized clicks.
+  const amount = budget;
+  const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
   return {
     encoded: Math.max(0, Math.min(ATTACK_PARTS - 1, encoded)),
-    amount: selectedAmount,
+    amount,
+    minimumAmount: selectedMinimumAmount,
     depth: selectedDepth,
     expectedTerritoryGain,
     budget,
     percentageLimit,
-    phaseLimit,
     competitorNearby: Boolean(competitorNearby)
   };
 }
