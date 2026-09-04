@@ -1010,7 +1010,7 @@ function my() {
 }
 
 function n0() {
-	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3) && __fx.autoExpand.canAttempt(bi.kj())) {
+	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3)) {
 		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxSeenNeutral = new Set, fxCompetitorNearby = !1, fxBotCandidates = [], fxSeenBots = new Set,
 				fxBorder = ah.h7[fxPlayer], fxDirections = ad.fT, fxBorderIndex = fxBorder.length - 1; 0 <= fxBorderIndex; fxBorderIndex--)
 			for (var fxDirection = 3; 0 <= fxDirection; fxDirection--) {
