@@ -90,8 +90,18 @@ function applyPatches(/** @type {ModUtils} */ { replace, replaceOne, replaceRawC
         // set position
         replaceRawCode(`aZ.g5.vO(aD3[3].button,x+a0S+gap,a3X+h+gap,a0S,h);`,
             `aZ.g5.vO(aD3[3].button,x+a0S+gap,a3X+h+gap,a0S,h);
-            aZ.g5.vO(aD3[5].button, x, a3X + h * 2 + gap * 2, a0S * 2 + gap, h / 3);
-            aZ.g5.vO(aD3[6].button, x, a3X + h * 2.33 + gap * 3, a0S * 2 + gap, h / 3);`);
+            var fxMainHeight = h * 2 / 3 - gap,
+                fxSmallHeight = h / 3,
+                fxSecondRow = a3X + fxMainHeight + gap,
+                fxSettingsRow = fxSecondRow + fxMainHeight + gap;
+            aZ.g5.vO(aD3[0].button, x, a3X, a0S, fxMainHeight);
+            aZ.g5.vO(aD3[1].button, x + a0S + gap, a3X, a0S, fxMainHeight);
+            aZ.g5.vO(aD3[2].button, x, fxSecondRow, a0S, fxMainHeight);
+            aZ.g5.vO(aD3[3].button, x + a0S + gap, fxSecondRow, a0S, fxMainHeight);
+            aZ.g5.vO(aD3[5].button, x, fxSettingsRow, a0S * 2 + gap, fxSmallHeight);
+            aZ.g5.vO(aD3[6].button, x, fxSettingsRow + fxSmallHeight + gap, a0S * 2 + gap, fxSmallHeight);
+            aD3[5].button.style.zIndex = aD3[6].button.style.zIndex = "8";
+            aD3[5].button.style.pointerEvents = aD3[6].button.style.pointerEvents = "auto";`);
     }
 
     { // Keybinds
