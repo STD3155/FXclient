@@ -44,20 +44,31 @@ function add(newWindow) {
   if (newWindow.modal === true) newWindow.element.setAttribute("aria-modal", "true");
 }
 function openWindow(windowName, ...args) {
-  if (windows[windowName].isOpen === true) return;
-  if (windows[windowName].beforeOpen !== undefined)
-    windows[windowName].beforeOpen(...args);
-  windows[windowName].previousFocus = document.activeElement;
-  windows[windowName].isOpen = true;
-  windows[windowName].element.style.display = null;
-  windows[windowName].element.setAttribute("aria-hidden", "false");
-  const heading = windows[windowName].element.querySelector("h1, h2, h3");
-  if (heading && !windows[windowName].element.hasAttribute("aria-labelledby")) {
+  const windowObj = windows[windowName];
+  if (!windowObj) {
+    console.error(`Unknown window: ${windowName}`);
+    return;
+  }
+  if (windowObj.isOpen === true) return;
+  if (windowObj.beforeOpen !== undefined) {
+    try {
+      windowObj.beforeOpen(...args);
+    } catch (error) {
+      console.error(`Could not prepare window ${windowName}:`, error);
+      window.__fx?.notifications?.show(`Some ${windowName} content could not be loaded`, "error", 5000);
+    }
+  }
+  windowObj.previousFocus = document.activeElement;
+  windowObj.isOpen = true;
+  windowObj.element.style.display = null;
+  windowObj.element.setAttribute("aria-hidden", "false");
+  const heading = windowObj.element.querySelector("h1, h2, h3");
+  if (heading && !windowObj.element.hasAttribute("aria-labelledby")) {
     if (!heading.id) heading.id = `fx-dialog-title-${windowName}`;
-    windows[windowName].element.setAttribute("aria-labelledby", heading.id);
+    windowObj.element.setAttribute("aria-labelledby", heading.id);
   }
   updateBackdrop();
-  windows[windowName].element.focus({ preventScroll: true });
+  windowObj.element.focus({ preventScroll: true });
 }
 function closeWindow(windowName) {
   if (windows[windowName].isOpen === false) return;

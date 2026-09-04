@@ -21,7 +21,9 @@ export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
     };
     keybindAddButton.addEventListener("click", this.addObject.bind(this));
     this.update = function (settings) {
-        this.objectArray = settings.attackPercentageKeybinds;
+        this.objectArray = Array.isArray(settings.attackPercentageKeybinds)
+            ? settings.attackPercentageKeybinds.filter((entry) => entry !== null && typeof entry === "object")
+            : [];
         this.displayObjects();
     }
     this.displayObjects = function () {

@@ -4,7 +4,13 @@ const MAX_REPLAYS = 5;
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((replay) => replay !== null
+      && typeof replay === "object"
+      && typeof replay.data === "string"
+      && Number.isFinite(Number(replay.timestamp)));
   } catch (error) {
     console.warn("Failed to load replay history:", error);
     return [];

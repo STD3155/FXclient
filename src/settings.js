@@ -74,6 +74,19 @@ function normalizeSettings(value) {
     const density = value.showPlayerDensity !== false;
     normalized.playerStatsMode = growth && density ? "both" : growth ? "growth" : density ? "density" : "off";
   }
+  normalized.attackPercentageKeybinds = normalized.attackPercentageKeybinds
+    .filter((entry) => entry !== null && typeof entry === "object")
+    .map((entry) => ({
+      key: typeof entry.key === "string" ? entry.key : "",
+      type: entry.type === "relative" ? "relative" : "absolute",
+      value: Number.isFinite(Number(entry.value)) ? Number(entry.value) : 0.8,
+    }));
+  normalized.lobbyReminderRules = normalized.lobbyReminderRules
+    .filter((entry) => entry !== null && typeof entry === "object");
+  normalized.customQuickEmojis = normalized.customQuickEmojis
+    .map((entry) => Number(entry?.code ?? entry))
+    .filter(Number.isFinite)
+    .slice(0, 9);
   return normalized;
 }
 
@@ -798,7 +811,13 @@ const settingsManager = new (function () {
     Object.keys(checkboxFields).forEach(function (key) {
       checkboxFields[key].checked = settings[key];
     });
-    customElements.forEach((element) => element.update?.(settings));
+    customElements.forEach((element) => {
+      try {
+        element.update?.(settings);
+      } catch (error) {
+        console.warn("Could not load a settings section:", error);
+      }
+    });
     setDirty(false);
   };
   this.resetAll = async function () {
