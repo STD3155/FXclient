@@ -1010,8 +1010,10 @@ function my() {
 }
 
 function n0() {
-	b2.ed(), aH.ed(), ao.ed(), af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4
-		.ed(), u.ed(), bX.eQ.ed(), bC.ed(), bi.ed()
+	var fxAutoExpand;
+	b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && bi.kj() % 10 == 8 && bv.hx(aE.fB) && null !== (fxAutoExpand = __fx.autoExpand.calculate(ah.hT[aE.fB], ah.hF[aE.fB], Math.max(bO.fs(
+			af.aCn(aE.fB) * ah.hT[aE.fB], 1e4), 1) + ah.hF[aE.fB] / 10)) && (aE.l6 ? bB.pg.hy(aE.fB, fxAutoExpand.encoded, aE.fO) : b1.pm.pq(fxAutoExpand.encoded, aE.fO)), af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY
+		.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC.ed(), bi.ed()
 }
 
 function n5() {
@@ -4753,6 +4755,7 @@ function cP() {
 	}
 
 	function aBv() {
+		__fx.utils.setPlayerRanks(kX);
 		aBW.clearRect(0, 0, aBQ, a9L),
 			aBW.fillStyle = aBq ? bE.pI : bE.pE,
 			aBW.fillRect(0, 0, aBQ, aBb),
@@ -7032,7 +7035,11 @@ function ce() {
 	function aLp(aC, fontSize, fY, fa, iT) {
 		var ___id = aC;
 		var showName = aC < aE.km || !__fx.settings.hideBotNames;
-		if (showName) iT.fillText(ah.zq[aC], fY, fa), aC < aE.km && 2 !== ah.a4l[aC] || (aC = fontSize / aL8[aC], iT.fillRect(fY - .5 * aC, fa + bD.rK.a0O * fontSize, aC, Math.max(1, .1 * fontSize)));
+		if (showName) iT.fillText(
+			__fx.utils.getRankedName(___id, ah.zq[aC]),
+			fY,
+			fa
+		), aC < aE.km && 2 !== ah.a4l[aC] || (aC = fontSize / aL8[aC], iT.fillRect(fY - .5 * aC, fa + bD.rK.a0O * fontSize, aC, Math.max(1, .1 * fontSize)));
 		var ___statsY = showName ? fa + fontSize : fa;
 		var ___statsColor = iT.fillStyle;
 		var ___showStats = !__fx.settings.adaptivePlayerStats ||
