@@ -3,6 +3,7 @@ import { calculateEconomicAttack } from "./economicAttack.js";
 const OPTIMAL_GROWTH_DENSITY = 100;
 const SERVER_RESERVE_PARTS = 12;
 const ATTACK_PARTS = 1024;
+const DEFAULT_EXPANSION_COST = 2;
 export const AUTO_EXPAND_TRIGGER_TICK = 3;
 export const PROACTIVE_EXPAND_TRIGGER_TICK = 0;
 const PROACTIVE_HORIZON_CYCLES = 2;
@@ -46,11 +47,85 @@ function calculatePercentageLimit(balance, normalPercentage) {
   return Math.floor(balance * (normalPercentage + 1) / ATTACK_PARTS);
 }
 
-export function calculateAutoExpandAttack(balance, territory, nextIncome, normalPercentage = ATTACK_PARTS - 1) {
-  if (![balance, territory, nextIncome, normalPercentage].every(Number.isFinite)) return null;
+export function analyzeExpansionFrontier({
+  border,
+  directions,
+  isNeutral,
+  getOwner,
+  maxDepth = 5,
+  ownerSearchDepth = 2
+} = {}) {
+  if (!border || typeof border[Symbol.iterator] !== "function"
+    || !directions || typeof directions[Symbol.iterator] !== "function"
+    || typeof isNeutral !== "function" || typeof getOwner !== "function") {
+    return { neutralLayerSizes: [], adjacentOwners: [], nearbyOwners: [] };
+  }
+
+  maxDepth = Math.max(1, Math.floor(Number.isFinite(maxDepth) ? maxDepth : 1));
+  ownerSearchDepth = Math.max(0, Math.floor(Number.isFinite(ownerSearchDepth) ? ownerSearchDepth : 0));
+
+  const seenNeutral = new Set();
+  const adjacentOwners = new Set();
+  const nearbyOwners = new Set();
+  const addOwner = (cell, owners) => {
+    const owner = getOwner(cell);
+    if (Number.isFinite(owner)) owners.add(Math.floor(owner));
+  };
+
+  for (const borderCell of border) {
+    for (const direction of directions) {
+      const neighbor = borderCell + direction;
+      if (isNeutral(neighbor)) {
+        seenNeutral.add(neighbor);
+      } else {
+        addOwner(neighbor, adjacentOwners);
+        addOwner(neighbor, nearbyOwners);
+      }
+    }
+  }
+
+  const neutralLayerSizes = [seenNeutral.size];
+  let neutralLayer = Array.from(seenNeutral);
+  for (let layerDepth = 1; layerDepth < maxDepth && neutralLayer.length > 0; layerDepth++) {
+    const nextNeutralLayer = [];
+    for (const neutralCell of neutralLayer) {
+      for (const direction of directions) {
+        const neighbor = neutralCell + direction;
+        if (isNeutral(neighbor)) {
+          if (!seenNeutral.has(neighbor)) {
+            seenNeutral.add(neighbor);
+            nextNeutralLayer.push(neighbor);
+          }
+        } else if (layerDepth <= ownerSearchDepth) {
+          addOwner(neighbor, nearbyOwners);
+        }
+      }
+    }
+    neutralLayerSizes.push(nextNeutralLayer.length);
+    neutralLayer = nextNeutralLayer;
+  }
+
+  return {
+    neutralLayerSizes,
+    adjacentOwners: Array.from(adjacentOwners),
+    nearbyOwners: Array.from(nearbyOwners)
+  };
+}
+
+export function calculateAutoExpandAttack(
+  balance,
+  territory,
+  nextIncome,
+  normalPercentage = ATTACK_PARTS - 1,
+  neutralFrontierTiles = 0,
+  expansionCost = DEFAULT_EXPANSION_COST
+) {
+  if (![balance, territory, nextIncome, normalPercentage, neutralFrontierTiles, expansionCost].every(Number.isFinite)) return null;
   balance = Math.max(0, Math.floor(balance));
   territory = Math.max(0, Math.floor(territory));
   nextIncome = Math.max(0, nextIncome);
+  neutralFrontierTiles = Math.max(0, Math.floor(neutralFrontierTiles));
+  expansionCost = Math.max(0, Math.floor(expansionCost));
   if (balance === 0 || territory === 0) return null;
 
   const capacity = OPTIMAL_GROWTH_DENSITY * territory;
@@ -59,11 +134,10 @@ export function calculateAutoExpandAttack(balance, territory, nextIncome, normal
 
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
-  // Once expansion is necessary, send the complete amount selected by the
-  // player. Sending only the overflow creates a new tiny neutral attack after
-  // nearly every income tick and repeatedly incurs the expansion penalty.
-  const amount = Math.min(available, percentageLimit);
-  if (amount <= 0) return null;
+  const minimumAmount = neutralFrontierTiles * (expansionCost + 1);
+  const desiredAmount = Math.max(overflow, minimumAmount);
+  const amount = Math.min(available, percentageLimit, desiredAmount);
+  if (amount <= 0 || amount < minimumAmount) return null;
 
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
   return {
@@ -71,6 +145,7 @@ export function calculateAutoExpandAttack(balance, territory, nextIncome, normal
     amount,
     overflow,
     capacity,
+    minimumAmount,
     percentageLimit
   };
 }
@@ -107,27 +182,26 @@ export function calculateProactiveExpandAttack(
   territory,
   projectedBalance,
   neutralFrontierTiles,
-  normalPercentage = ATTACK_PARTS - 1
+  normalPercentage = ATTACK_PARTS - 1,
+  expansionCost = DEFAULT_EXPANSION_COST
 ) {
-  if (![balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage].every(Number.isFinite)) return null;
+  if (![balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage, expansionCost].every(Number.isFinite)) return null;
   balance = Math.max(0, Math.floor(balance));
   territory = Math.max(0, Math.floor(territory));
   projectedBalance = Math.max(0, Math.floor(projectedBalance));
   neutralFrontierTiles = Math.max(0, Math.floor(neutralFrontierTiles));
+  expansionCost = Math.max(0, Math.floor(expansionCost));
   if (balance === 0 || territory === 0 || neutralFrontierTiles === 0) return null;
 
   const capacity = OPTIMAL_GROWTH_DENSITY * territory;
   const projectedOverflow = projectedBalance - capacity;
   if (projectedOverflow <= 0) return null;
 
-  // Neutral expansion is distributed over the complete frontier. Territorial
-  // requires more than two troops per frontier tile for the first wave, so
-  // three per currently reachable tile is the smallest reliable click.
-  const minimumAmount = 3 * neutralFrontierTiles;
+  const minimumAmount = (expansionCost + 1) * neutralFrontierTiles;
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
-  const amount = Math.min(available, percentageLimit);
-  if (amount < minimumAmount) return null;
+  if (minimumAmount > available || minimumAmount > percentageLimit) return null;
+  const amount = minimumAmount;
 
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
   return {
@@ -147,11 +221,13 @@ export function calculateOpeningExpandAttack(
   tick,
   neutralLayerSizes,
   normalPercentage,
-  competitorNearby = false
+  competitorNearby = false,
+  expansionCost = DEFAULT_EXPANSION_COST
 ) {
-  if (![balance, tick, normalPercentage].every(Number.isFinite) || !Array.isArray(neutralLayerSizes)) return null;
+  if (![balance, tick, normalPercentage, expansionCost].every(Number.isFinite) || !Array.isArray(neutralLayerSizes)) return null;
   balance = Math.max(0, Math.floor(balance));
   tick = Math.max(0, Math.floor(tick));
+  expansionCost = Math.max(0, Math.floor(expansionCost));
   if (balance === 0 || tick >= OPENING_END_TICK) return null;
 
   let maxDepth;
@@ -181,9 +257,12 @@ export function calculateOpeningExpandAttack(
     const layerSize = Math.max(0, Math.floor(neutralLayerSizes[layer] || 0));
     if (layerSize === 0) break;
 
-    // Every completed prior layer costs two troops per tile. The next layer
-    // needs three troops per tile at the moment it is reached.
-    minimumAmount = Math.max(minimumAmount, 2 * previousTiles + 3 * layerSize);
+    // Completed layers consume expansionCost troops per tile. Reaching the
+    // next layer requires one additional troop per frontier tile.
+    minimumAmount = Math.max(
+      minimumAmount,
+      expansionCost * previousTiles + (expansionCost + 1) * layerSize
+    );
     if (minimumAmount > budget) break;
     previousTiles += layerSize;
     selectedMinimumAmount = minimumAmount;
@@ -192,10 +271,7 @@ export function calculateOpeningExpandAttack(
   }
   if (selectedMinimumAmount <= 0) return null;
 
-  // The terrain analysis decides whether and how far to expand. The attack
-  // size itself always follows the player's slider so one deliberate wave is
-  // sent instead of a sequence of minimum-sized clicks.
-  const amount = budget;
+  const amount = selectedMinimumAmount;
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
   return {
     encoded: Math.max(0, Math.min(ATTACK_PARTS - 1, encoded)),
@@ -266,37 +342,115 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
   }
 
   return {
-    plan(tick, balance, territory, nextIncome, target = null, normalPercentage = ATTACK_PARTS - 1) {
+    plan(
+      tick,
+      balance,
+      territory,
+      nextIncome,
+      target = null,
+      normalPercentage = ATTACK_PARTS - 1,
+      neutralFrontierTiles = 0,
+      expansionCost = DEFAULT_EXPANSION_COST
+    ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== triggerTick) return null;
-      const attack = calculateAutoExpandAttack(balance, territory, nextIncome, normalPercentage);
-      // A correction exists only when the next payout would cross the growth
-      // cap. It sends the slider amount and may therefore reinforce neutral
-      // expansion immediately without waiting for the neutral cooldown.
+      const attack = calculateAutoExpandAttack(
+        balance,
+        territory,
+        nextIncome,
+        normalPercentage,
+        neutralFrontierTiles,
+        expansionCost
+      );
+      // An urgent correction may reinforce neutral expansion immediately,
+      // but it still respects the slider and the initial frontier cost.
       return schedule(tick, "correction", attack, target, true, true);
     },
-    planProactive(tick, balance, territory, projectedBalance, neutralFrontierTiles, target = null, normalPercentage = ATTACK_PARTS - 1) {
+    planProactive(
+      tick,
+      balance,
+      territory,
+      projectedBalance,
+      neutralFrontierTiles,
+      target = null,
+      normalPercentage = ATTACK_PARTS - 1,
+      expansionCost = DEFAULT_EXPANSION_COST
+    ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== PROACTIVE_EXPAND_TRIGGER_TICK) return null;
-      const attack = calculateProactiveExpandAttack(balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage);
+      const attack = calculateProactiveExpandAttack(
+        balance,
+        territory,
+        projectedBalance,
+        neutralFrontierTiles,
+        normalPercentage,
+        expansionCost
+      );
       return schedule(tick, "proactive", attack, target, true, false);
     },
-    planOpening(tick, balance, neutralLayerSizes, normalPercentage, competitorNearby, target = null) {
+    planOpening(
+      tick,
+      balance,
+      neutralLayerSizes,
+      normalPercentage,
+      competitorNearby,
+      target = null,
+      expansionCost = DEFAULT_EXPANSION_COST
+    ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== PROACTIVE_EXPAND_TRIGGER_TICK) return null;
-      const attack = calculateOpeningExpandAttack(balance, tick, neutralLayerSizes, normalPercentage, competitorNearby);
+      const attack = calculateOpeningExpandAttack(
+        balance,
+        tick,
+        neutralLayerSizes,
+        normalPercentage,
+        competitorNearby,
+        expansionCost
+      );
       return schedule(tick, "proactive", attack, target, true, false);
     },
-    planBot(tick, ownBalance, normalPercentage, candidates, neutralAvailable = false) {
+    planBot(tick, ownBalance, normalPercentage, candidates) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== triggerTick) return null;
-      if (neutralAvailable) return null;
       const attack = findAutoExpandBotAttack(ownBalance, normalPercentage, candidates);
       return schedule(tick, "correction", attack, attack?.target ?? null);
+    },
+    planCorrection(
+      tick,
+      balance,
+      territory,
+      nextIncome,
+      neutralFrontierTiles,
+      neutralTarget,
+      normalPercentage,
+      botCandidates,
+      expansionCost = DEFAULT_EXPANSION_COST
+    ) {
+      if (!Number.isFinite(tick)) return null;
+      tick = Math.floor(tick);
+      if (positiveModulo(tick, 10) !== triggerTick) return null;
+
+      const neutralAttack = neutralFrontierTiles > 0
+        ? calculateAutoExpandAttack(
+          balance,
+          territory,
+          nextIncome,
+          normalPercentage,
+          neutralFrontierTiles,
+          expansionCost
+        )
+        : null;
+      if (neutralAttack !== null) {
+        const targetedNeutralAttack = { ...neutralAttack, target: neutralTarget };
+        return schedule(tick, "correction", targetedNeutralAttack, neutralTarget, true, true);
+      }
+
+      const botAttack = findAutoExpandBotAttack(balance, normalPercentage, botCandidates);
+      return schedule(tick, "correction", botAttack, botAttack?.target ?? null);
     },
     acknowledge(target, encoded) {
       if (pendingAttack !== null && pendingAttack.target === target && pendingAttack.encoded === encoded) pendingAttack = null;
@@ -313,6 +467,7 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
 const controller = createAutoExpandController();
 
 export default {
+  analyzeFrontier: analyzeExpansionFrontier,
   calculate: calculateAutoExpandAttack,
   calculateProactive: calculateProactiveExpandAttack,
   calculateOpening: calculateOpeningExpandAttack,
@@ -323,6 +478,7 @@ export default {
   planProactive: controller.planProactive,
   planOpening: controller.planOpening,
   planBot: controller.planBot,
+  planCorrection: controller.planCorrection,
   acknowledge: controller.acknowledge,
   reset: controller.reset
 };

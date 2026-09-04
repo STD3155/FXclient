@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  analyzeExpansionFrontier,
   calculateAutoExpandAttack,
   calculateNextIncome,
   calculateOpeningExpandAttack,
@@ -14,13 +15,13 @@ test("does nothing while the next income remains at or below 100% density", () =
   assert.equal(calculateAutoExpandAttack(9_900, 100, 100), null);
 });
 
-test("sends the configured slider amount once optimal growth density would be exceeded", () => {
+test("uses the slider as a limit while correcting projected overflow", () => {
   const attack = calculateAutoExpandAttack(9_950, 100, 125, 204);
   assert.equal(attack.capacity, 10_000);
   assert.equal(attack.overflow, 75);
   assert.equal(attack.percentageLimit, 1_991);
-  assert.equal(attack.amount, 1_991);
-  assert.equal(attack.encoded, 204);
+  assert.equal(attack.amount, 75);
+  assert.equal(attack.encoded, 7);
 });
 
 test("respects the reserve enforced by the game", () => {
@@ -32,6 +33,32 @@ test("never exceeds the configured attack percentage during a correction", () =>
   const attack = calculateAutoExpandAttack(9_950, 100, 125, 0);
   assert.equal(attack.percentageLimit, 9);
   assert.equal(attack.amount, 9);
+});
+
+test("does not let the game top up a correction beyond the slider limit", () => {
+  assert.equal(calculateAutoExpandAttack(9_950, 100, 125, 0, 10, 2), null);
+
+  const attack = calculateAutoExpandAttack(9_999, 100, 2, 204, 10, 2);
+  assert.equal(attack.overflow, 1);
+  assert.equal(attack.minimumAmount, 30);
+  assert.equal(attack.amount, 30);
+});
+
+test("extracts multiple neutral layers and nearby owners from the map", () => {
+  const neutralCells = new Set([1, 10, 2, 11, 20, 3]);
+  const owners = new Map([[-10, 8], [12, 7]]);
+  const analysis = analyzeExpansionFrontier({
+    border: [0],
+    directions: [-10, 1, 10, -1],
+    isNeutral: (cell) => neutralCells.has(cell),
+    getOwner: (cell) => owners.get(cell),
+    maxDepth: 5,
+    ownerSearchDepth: 2
+  });
+
+  assert.deepEqual(analysis.neutralLayerSizes, [2, 3, 1, 0]);
+  assert.deepEqual(analysis.adjacentOwners, [8]);
+  assert.deepEqual(analysis.nearbyOwners.sort((a, b) => a - b), [7, 8]);
 });
 
 test("projects only the income that is actually paid on the next income tick", () => {
@@ -52,8 +79,8 @@ test("starts a minimal reliable neutral-front expansion before the projected cap
   const attack = calculateProactiveExpandAttack(9_900, 100, 10_100, 10, 204);
   assert.equal(attack.projectedOverflow, 100);
   assert.equal(attack.minimumAmount, 30);
-  assert.equal(attack.amount, 1_981);
-  assert.equal(attack.encoded, 204);
+  assert.equal(attack.amount, 30);
+  assert.equal(attack.encoded, 3);
   assert.equal(attack.expectedTerritoryGain, 10);
 });
 
@@ -66,8 +93,8 @@ test("does not start proactive expansion without a projected overflow or enough 
 test("opening expansion selects the deepest affordable neutral layer", () => {
   const attack = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18, 22, 26], 204, false);
   assert.equal(attack.minimumAmount, 206);
-  assert.equal(attack.amount, 2_001);
-  assert.equal(attack.encoded, 204);
+  assert.equal(attack.amount, 206);
+  assert.equal(attack.encoded, 21);
   assert.equal(attack.depth, 5);
   assert.equal(attack.expectedTerritoryGain, 90);
 });
@@ -76,19 +103,22 @@ test("opening search depth decreases by phase and increases near a competitor", 
   const layers = [10, 15, 20, 25, 30];
   const middle = calculateOpeningExpandAttack(10_000, 100, layers, 1023, false);
   assert.equal(middle.depth, 4);
+  assert.equal(middle.amount, 165);
 
   const late = calculateOpeningExpandAttack(10_000, 300, layers, 1023, false);
   assert.equal(late.depth, 3);
+  assert.equal(late.amount, 110);
 
   const contested = calculateOpeningExpandAttack(10_000, 300, layers, 1023, true);
   assert.equal(contested.depth, 5);
+  assert.equal(contested.amount, 230);
 });
 
 test("opening expansion respects the slider and ends after tick 599", () => {
   const sliderLimited = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18], 5, false);
   assert.equal(sliderLimited.depth, 1);
   assert.equal(sliderLimited.minimumAmount, 30);
-  assert.equal(sliderLimited.amount, 58);
+  assert.equal(sliderLimited.amount, 30);
   assert.equal(sliderLimited.percentageLimit, 58);
   assert.equal(calculateOpeningExpandAttack(10_000, 600, [10, 14, 18], 1023, true), null);
 });
@@ -159,11 +189,20 @@ test("tracks bot targets while waiting for the authoritative server event", () =
   assert.notEqual(controller.planBot(23, 10_000, 1023, candidates), null);
 });
 
-test("always prioritizes adjacent neutral territory over a conquerable bot", () => {
+test("prioritizes an actionable neutral correction over a conquerable bot", () => {
   const controller = createAutoExpandController();
   const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
-  assert.equal(controller.planBot(3, 10_000, 1023, candidates, true), null);
-  assert.notEqual(controller.plan(3, 10_500, 100, 100, 512, 1023), null);
+  const attack = controller.planCorrection(3, 10_500, 100, 100, 10, 512, 1023, candidates, 2);
+  assert.notEqual(attack, null);
+  assert.equal(attack.target, 512);
+});
+
+test("falls back to a conquerable bot when neutral expansion is not actionable", () => {
+  const controller = createAutoExpandController();
+  const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
+  const attack = controller.planCorrection(3, 10_000, 100, 100, 200, 512, 30, candidates, 2);
+  assert.notEqual(attack, null);
+  assert.equal(attack.target, 8);
 });
 
 test("lets an urgent growth correction bypass the neutral expansion cooldown", () => {

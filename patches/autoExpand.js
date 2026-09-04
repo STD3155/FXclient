@@ -42,61 +42,39 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
             var fxIsCorrectionTick = fxTick % 10 === 3;
             var fxBalance = ah.hT[fxPlayer];
             var fxTerritory = ah.hF[fxPlayer];
-            var fxSeenNeutral = new Set();
-            var fxCompetitorNearby = false;
-            var fxBotCandidates = [];
-            var fxSeenBots = new Set();
             var fxBorder = ah.h7[fxPlayer];
             var fxDirections = ad.fT;
-            for (var fxBorderIndex = fxBorder.length - 1; fxBorderIndex >= 0; fxBorderIndex--) {
-                for (var fxDirection = 3; fxDirection >= 0; fxDirection--) {
-                    var fxNeighbor = fxBorder[fxBorderIndex] + fxDirections[fxDirection];
-                    if (ad.fI(fxNeighbor)) {
-                        fxSeenNeutral.add(fxNeighbor);
-                    } else if (ad.h1(fxNeighbor)) {
-                        var fxTarget = ad.fJ(fxNeighbor);
-                        if (fxTarget < aE.km && fxTarget !== fxPlayer && bD.gn.hd(fxTarget)
-                            && bD.gn.lQ(fxPlayer, fxTarget)) {
-                            fxCompetitorNearby = true;
-                        } else if (fxIsCorrectionTick && fxTarget >= aE.km && fxTarget < aE.fO && !fxSeenBots.has(fxTarget)
-                            && bD.gn.hd(fxTarget) && bD.gn.lQ(fxPlayer, fxTarget)) {
-                            fxSeenBots.add(fxTarget);
-                            fxBotCandidates.push({
-                                id: fxTarget,
-                                balance: ah.hT[fxTarget],
-                                territory: ah.hF[fxTarget],
-                                existingAttack: ae.hU(fxPlayer, fxTarget)
-                            });
-                        }
-                    }
+            var fxAnalysis = __fx.autoExpand.analyzeFrontier({
+                border: fxBorder,
+                directions: fxDirections,
+                isNeutral: function(fxCell) { return ad.fI(fxCell); },
+                getOwner: function(fxCell) { return ad.h1(fxCell) ? ad.fJ(fxCell) : null; },
+                maxDepth: fxIsCorrectionTick ? 1 : 5,
+                ownerSearchDepth: 2
+            });
+            var fxNeutralLayerSizes = fxAnalysis.neutralLayerSizes;
+            var fxCompetitorNearby = false;
+            for (var fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; fxOwnerIndex >= 0; fxOwnerIndex--) {
+                var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
+                if (fxOwner < aE.km && fxOwner !== fxPlayer && bD.gn.hd(fxOwner)
+                    && bD.gn.lQ(fxPlayer, fxOwner)) {
+                    fxCompetitorNearby = true;
+                    break;
                 }
             }
-            var fxNeutralLayerSizes = [fxSeenNeutral.size];
-            if (!fxIsCorrectionTick && fxSeenNeutral.size > 0) {
-                var fxNeutralLayer = Array.from(fxSeenNeutral);
-                for (var fxLayerDepth = 1; fxLayerDepth < 5; fxLayerDepth++) {
-                    var fxNextNeutralLayer = [];
-                    for (var fxLayerIndex = fxNeutralLayer.length - 1; fxLayerIndex >= 0; fxLayerIndex--) {
-                        for (var fxLayerDirection = 3; fxLayerDirection >= 0; fxLayerDirection--) {
-                            var fxLayerNeighbor = fxNeutralLayer[fxLayerIndex] + fxDirections[fxLayerDirection];
-                            if (!ad.fW(fxLayerNeighbor)) continue;
-                            if (ad.fI(fxLayerNeighbor)) {
-                                if (!fxSeenNeutral.has(fxLayerNeighbor)) {
-                                    fxSeenNeutral.add(fxLayerNeighbor);
-                                    fxNextNeutralLayer.push(fxLayerNeighbor);
-                                }
-                            } else if (ad.h1(fxLayerNeighbor)) {
-                                var fxLayerTarget = ad.fJ(fxLayerNeighbor);
-                                if (fxLayerDepth <= 2 && fxLayerTarget < aE.km && fxLayerTarget !== fxPlayer && bD.gn.hd(fxLayerTarget)
-                                    && bD.gn.lQ(fxPlayer, fxLayerTarget)) {
-                                    fxCompetitorNearby = true;
-                                }
-                            }
-                        }
+            var fxBotCandidates = [];
+            if (fxIsCorrectionTick) {
+                for (var fxBotIndex = fxAnalysis.adjacentOwners.length - 1; fxBotIndex >= 0; fxBotIndex--) {
+                    var fxBotTarget = fxAnalysis.adjacentOwners[fxBotIndex];
+                    if (fxBotTarget >= aE.km && fxBotTarget < aE.fO && bD.gn.hd(fxBotTarget)
+                        && bD.gn.lQ(fxPlayer, fxBotTarget)) {
+                        fxBotCandidates.push({
+                            id: fxBotTarget,
+                            balance: ah.hT[fxBotTarget],
+                            territory: ah.hF[fxBotTarget],
+                            existingAttack: ae.hU(fxPlayer, fxBotTarget)
+                        });
                     }
-                    fxNeutralLayerSizes.push(fxNextNeutralLayer.length);
-                    fxNeutralLayer = fxNextNeutralLayer;
-                    if (fxNeutralLayer.length === 0) break;
                 }
             }
             var fxArmyIncomeScale = aE.data.aIncomeType === 0 ? 0
@@ -115,7 +93,8 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                         fxNeutralLayerSizes,
                         fxAttackPercentage,
                         fxCompetitorNearby,
-                        aE.fO
+                        aE.fO,
+                        aE.gl
                     );
                 } else {
                     var fxProjectedBalance = __fx.autoExpand.projectBalance(
@@ -134,36 +113,33 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                         fxProjectedBalance,
                         fxNeutralLayerSizes[0],
                         aE.fO,
-                        fxAttackPercentage
+                        fxAttackPercentage,
+                        aE.gl
                     );
                 }
             } else if (fxIsCorrectionTick) {
-                fxAutoExpand = __fx.autoExpand.planBot(
-                    fxTick,
-                    fxBalance,
-                    fxAttackPercentage,
-                    fxBotCandidates,
-                    fxNeutralLayerSizes[0] > 0
-                );
-                fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
-            }
-            if (fxAutoExpand === null && fxIsCorrectionTick && fxNeutralLayerSizes[0] > 0) {
-                var fxNextIncome = __fx.autoExpand.calculateNextIncome(
-                    fxBalance,
-                    fxTerritory,
-                    af.aCn(fxPlayer),
-                    fxTick,
-                    fxArmyIncomeScale,
-                    fxTerritorialIncomeScale
-                );
-                fxAutoExpand = __fx.autoExpand.plan(
+                var fxNextIncome = fxNeutralLayerSizes[0] > 0
+                    ? __fx.autoExpand.calculateNextIncome(
+                        fxBalance,
+                        fxTerritory,
+                        af.aCn(fxPlayer),
+                        fxTick,
+                        fxArmyIncomeScale,
+                        fxTerritorialIncomeScale
+                    )
+                    : 0;
+                fxAutoExpand = __fx.autoExpand.planCorrection(
                     fxTick,
                     fxBalance,
                     fxTerritory,
                     fxNextIncome,
+                    fxNeutralLayerSizes[0],
                     aE.fO,
-                    fxAttackPercentage
+                    fxAttackPercentage,
+                    fxBotCandidates,
+                    aE.gl
                 );
+                fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
             }
             if (fxAutoExpand !== null) {
                 if (aE.l6) bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget);
@@ -171,10 +147,10 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
             }
         }`)
 
-    // Clear the pending request once the authoritative attack event is
-    // applied. This avoids duplicate sends when a server response is delayed.
+    // Clear the pending request only after the authoritative event passed all
+    // validation and created or reinforced the attack.
     replaceRawCode(
-        `this.hy=function(player,j4,jv){if(!bD.gn.hc(1)){return}if(!bD.gn.hd(player)){return}if(!bD.gn.qh(player,jv)){return}`,
-        `this.hy=function(player,j4,jv){if(!bD.gn.hc(1)){return}if(!bD.gn.hd(player)){return}if(!bD.gn.qh(player,jv)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(jv,j4)}`
+        `if(!ap.jX.jl(player,jm)){return}bD.gn.mw(player)`,
+        `if(!ap.jX.jl(player,jm)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(bR.fN[0],j4)}bD.gn.mw(player)`
     )
 }
