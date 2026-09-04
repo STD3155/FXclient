@@ -27,7 +27,7 @@ export default (/** @type {ModUtils} */ modUtils) => {
 
 	// Reset donation history and leaderboard filter when a new game is started
 	insertCode(`an.init();ai.a5l();bA.pQ.qC = [];bA.hZ.pT = 1;/* here */`,
-		`__fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.economicAttack.reset(), __fx.customLobby.isActive() && __fx.customLobby.hideWindow();`);
+		`__fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.economicAttack.reset(), __fx.autoExpand.reset(), __fx.customLobby.isActive() && __fx.customLobby.hideWindow();`);
 
     waitForMinification(() => applyPatches(modUtils))
 }
