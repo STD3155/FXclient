@@ -74,9 +74,9 @@ export function createQuickEmojis(container) {
     ? String.fromCodePoint(0x1f1e6 + Math.floor(code / 26), 0x1f1e6 + (code % 26))
     : (quickEmojis().emojiList ?? [])[code - (quickEmojis().emojiBaseCode ?? 676)] ?? "";
 
-  function paint(cell, code, round = true) {
+  function paint(cell, code, round = true, loadTile = true) {
     const tile = code >= ICON_BASE && code <= MORE_CODE;
-    const tileUrl = tile ? tileFor(code) : "";
+    const tileUrl = tile && loadTile ? tileFor(code) : "";
     cell.replaceChildren();
     cell.style.backgroundColor = !tile ? "transparent"
       : code === MORE_CODE ? "rgba(0, 180, 0, 0.6)" : "rgba(0, 0, 0, 0.6)";
@@ -89,6 +89,8 @@ export function createQuickEmojis(container) {
       cell.append(image);
     } else if (!tile) {
       cell.textContent = glyphFor(code);
+    } else if (!loadTile) {
+      cell.textContent = "…";
     }
   }
 
@@ -141,6 +143,7 @@ export function createQuickEmojis(container) {
   }
   function open(index) {
     buildOptions();
+    slots.forEach((slot, i) => paint(slot, codes[i], false));
     page = 1;
     renderPage();
     arm(index);
@@ -170,7 +173,7 @@ export function createQuickEmojis(container) {
       buildOptions();
       slots.forEach((slot, i) => {
         if (codes[i] === null) codes[i] = options[i] ?? ICON_BASE + i;
-        paint(slot, codes[i], false);
+        paint(slot, codes[i], false, false);
       });
       updateVisibility();
       close();

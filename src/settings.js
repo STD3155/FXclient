@@ -36,6 +36,10 @@ const settingsWindow = requireElement(".settings");
 
 let settingsUi;
 const settingsManager = {
+  open() {
+    WindowManager.openWindow("settings");
+  },
+
   applyPreset(name, values) {
     settingsUi.applyPreset(values);
     notifications.show(`${name} preset selected — save to apply`, "success");
@@ -123,6 +127,22 @@ WindowManager.add({
   element: settingsWindow,
   beforeOpen: () => settingsManager.syncFields()
 });
+
+function bindHomeSettingsButton(root = document) {
+  root.querySelectorAll?.("button").forEach((button) => {
+    if (button.textContent.trim() !== "FX Client settings" || button.dataset.fxSettingsBound) return;
+    button.dataset.fxSettingsBound = "true";
+    button.onclick = () => settingsManager.open();
+  });
+}
+
+const homeButtonObserver = new MutationObserver((records) => {
+  records.forEach((record) => record.addedNodes.forEach((node) => {
+    if (node instanceof HTMLElement) bindHomeSettingsButton(node.matches("button") ? node.parentElement : node);
+  }));
+});
+homeButtonObserver.observe(document.body, { childList: true, subtree: true });
+bindHomeSettingsButton();
 
 export function tryEnterFullscreen() {
   if (document.fullscreenElement !== null || !document.fullscreenEnabled) return;
