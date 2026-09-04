@@ -9159,7 +9159,7 @@ function aP9() {
 			u.v(12)
 		}, bE.oJ, !1),
 		new x("FX Client settings", function() {
-			__fx.WindowManager.openWindow("settings");
+			__fx.settingsManager.open();
 		}, "rgba(0, 0, 20, 0.5)"),
 		new x("Join/Create custom lobby", function() {
 			__fx.customLobby.showJoinPrompt();
