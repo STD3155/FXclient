@@ -14,12 +14,13 @@ test("does nothing while the next income remains at or below 100% density", () =
   assert.equal(calculateAutoExpandAttack(9_900, 100, 100), null);
 });
 
-test("sends only the projected amount above optimal growth density", () => {
-  const attack = calculateAutoExpandAttack(9_950, 100, 125);
+test("sends the configured slider amount once optimal growth density would be exceeded", () => {
+  const attack = calculateAutoExpandAttack(9_950, 100, 125, 204);
   assert.equal(attack.capacity, 10_000);
   assert.equal(attack.overflow, 75);
-  assert.equal(attack.amount, 75);
-  assert.ok(Math.floor(9_950 * (attack.encoded + 1) / 1024) >= 75);
+  assert.equal(attack.percentageLimit, 1_991);
+  assert.equal(attack.amount, 1_991);
+  assert.equal(attack.encoded, 204);
 });
 
 test("respects the reserve enforced by the game", () => {

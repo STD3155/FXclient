@@ -59,7 +59,10 @@ export function calculateAutoExpandAttack(balance, territory, nextIncome, normal
 
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
-  const amount = Math.min(overflow, available, percentageLimit);
+  // Once expansion is necessary, send the complete amount selected by the
+  // player. Sending only the overflow creates a new tiny neutral attack after
+  // nearly every income tick and repeatedly incurs the expansion penalty.
+  const amount = Math.min(available, percentageLimit);
   if (amount <= 0) return null;
 
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
@@ -269,7 +272,8 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       if (positiveModulo(tick, 10) !== triggerTick) return null;
       const attack = calculateAutoExpandAttack(balance, territory, nextIncome, normalPercentage);
       // A correction exists only when the next payout would cross the growth
-      // cap, so it is allowed to reinforce neutral expansion immediately.
+      // cap. It sends the slider amount and may therefore reinforce neutral
+      // expansion immediately without waiting for the neutral cooldown.
       return schedule(tick, "correction", attack, target, true, true);
     },
     planProactive(tick, balance, territory, projectedBalance, neutralFrontierTiles, target = null, normalPercentage = ATTACK_PARTS - 1) {
