@@ -36,7 +36,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
         bC.ed();
         bi.ed();
         }`, `if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
-            && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3)) {
+            && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3) && __fx.autoExpand.canAttempt(bi.kj())) {
             var fxPlayer = aE.fB;
             var fxTick = bi.kj();
             var fxIsCorrectionTick = fxTick % 10 === 3;
@@ -74,7 +74,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
             var fxNeutralLayerSizes = [fxSeenNeutral.size];
             if (!fxIsCorrectionTick && fxSeenNeutral.size > 0) {
                 var fxNeutralLayer = Array.from(fxSeenNeutral);
-                for (var fxLayerDepth = 1; fxLayerDepth < 3; fxLayerDepth++) {
+                for (var fxLayerDepth = 1; fxLayerDepth < 5; fxLayerDepth++) {
                     var fxNextNeutralLayer = [];
                     for (var fxLayerIndex = fxNeutralLayer.length - 1; fxLayerIndex >= 0; fxLayerIndex--) {
                         for (var fxLayerDirection = 3; fxLayerDirection >= 0; fxLayerDirection--) {
@@ -87,7 +87,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                                 }
                             } else if (ad.h1(fxLayerNeighbor)) {
                                 var fxLayerTarget = ad.fJ(fxLayerNeighbor);
-                                if (fxLayerTarget < aE.km && fxLayerTarget !== fxPlayer && bD.gn.hd(fxLayerTarget)
+                                if (fxLayerDepth <= 2 && fxLayerTarget < aE.km && fxLayerTarget !== fxPlayer && bD.gn.hd(fxLayerTarget)
                                     && bD.gn.lQ(fxPlayer, fxLayerTarget)) {
                                     fxCompetitorNearby = true;
                                 }

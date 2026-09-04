@@ -8,6 +8,7 @@ export const PROACTIVE_EXPAND_TRIGGER_TICK = 0;
 const PROACTIVE_HORIZON_CYCLES = 2;
 const PENDING_TIMEOUT_CYCLES = 3;
 const OPENING_END_TICK = 600;
+const MIN_AUTO_ATTACK_INTERVAL_TICKS = 20;
 
 function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
@@ -151,18 +152,18 @@ export function calculateOpeningExpandAttack(
   let maxShare;
   let maxDepth;
   if (tick < 100) {
-    maxShare = 0.12;
-    maxDepth = 3;
+    maxShare = 0.18;
+    maxDepth = 5;
   } else if (tick < 300) {
-    maxShare = 0.08;
-    maxDepth = 2;
+    maxShare = 0.12;
+    maxDepth = 4;
   } else {
-    maxShare = 0.05;
-    maxDepth = 2;
+    maxShare = 0.08;
+    maxDepth = 3;
   }
   if (competitorNearby) {
-    maxShare = 0.15;
-    maxDepth = 3;
+    maxShare = 0.20;
+    maxDepth = 5;
   }
 
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
@@ -241,23 +242,34 @@ export function findAutoExpandBotAttack(ownBalance, normalPercentage, candidates
 export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TICK) {
   const lastCycleByPhase = { proactive: null, correction: null };
   let pendingAttack = null;
+  let lastAttackTick = null;
+
+  function canAttempt(tick) {
+    if (!Number.isFinite(tick)) return false;
+    tick = Math.floor(tick);
+    if (lastAttackTick !== null && tick - lastAttackTick < MIN_AUTO_ATTACK_INTERVAL_TICKS) return false;
+    if (pendingAttack !== null && Math.floor(tick / 10) - pendingAttack.cycle < PENDING_TIMEOUT_CYCLES) return false;
+    return true;
+  }
 
   function schedule(tick, phase, attack, target = null) {
     if (attack === null) return null;
     const cycle = Math.floor(tick / 10);
     if (cycle === lastCycleByPhase[phase]) return null;
-    lastCycleByPhase[phase] = cycle;
+    if (!canAttempt(tick)) return null;
 
     if (pendingAttack !== null) {
-      if (cycle - pendingAttack.cycle < PENDING_TIMEOUT_CYCLES) return null;
       pendingAttack = null;
     }
 
+    lastCycleByPhase[phase] = cycle;
+    lastAttackTick = tick;
     pendingAttack = { cycle, encoded: attack.encoded, target };
     return attack;
   }
 
   return {
+    canAttempt,
     plan(tick, balance, territory, nextIncome, target = null, normalPercentage = ATTACK_PARTS - 1) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
@@ -294,6 +306,7 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       lastCycleByPhase.proactive = null;
       lastCycleByPhase.correction = null;
       pendingAttack = null;
+      lastAttackTick = null;
     }
   };
 }
@@ -307,6 +320,7 @@ export default {
   calculateNextIncome,
   projectBalance,
   findBotAttack: findAutoExpandBotAttack,
+  canAttempt: controller.canAttempt,
   plan: controller.plan,
   planProactive: controller.planProactive,
   planOpening: controller.planOpening,

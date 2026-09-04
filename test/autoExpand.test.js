@@ -62,26 +62,26 @@ test("does not start proactive expansion without a projected overflow or enough 
 });
 
 test("opening expansion selects the deepest affordable neutral layer", () => {
-  const attack = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18], 1023, false);
-  assert.equal(attack.amount, 102);
-  assert.equal(attack.depth, 3);
-  assert.equal(attack.expectedTerritoryGain, 42);
-  assert.equal(attack.phaseLimit, 1_200);
+  const attack = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18, 22, 26], 1023, false);
+  assert.equal(attack.amount, 206);
+  assert.equal(attack.depth, 5);
+  assert.equal(attack.expectedTerritoryGain, 90);
+  assert.equal(attack.phaseLimit, 1_800);
 });
 
 test("opening aggression decreases by phase and increases near a competitor", () => {
   const layers = [100, 150, 200];
   const middle = calculateOpeningExpandAttack(10_000, 100, layers, 1023, false);
-  assert.equal(middle.depth, 2);
-  assert.equal(middle.phaseLimit, 800);
+  assert.equal(middle.depth, 3);
+  assert.equal(middle.phaseLimit, 1_200);
 
   const late = calculateOpeningExpandAttack(10_000, 300, layers, 1023, false);
-  assert.equal(late.depth, 1);
-  assert.equal(late.phaseLimit, 500);
+  assert.equal(late.depth, 2);
+  assert.equal(late.phaseLimit, 800);
 
   const contested = calculateOpeningExpandAttack(10_000, 300, layers, 1023, true);
   assert.equal(contested.depth, 3);
-  assert.equal(contested.phaseLimit, 1_500);
+  assert.equal(contested.phaseLimit, 2_000);
 });
 
 test("opening expansion respects the slider and ends after tick 599", () => {
@@ -99,7 +99,8 @@ test("plans at tick three and never sends twice in one income cycle", () => {
   assert.notEqual(attack, null);
   assert.equal(controller.plan(3, 9_950, 100, 125), null);
   controller.acknowledge(null, attack.encoded);
-  assert.notEqual(controller.plan(13, 9_950, 100, 125), null);
+  assert.equal(controller.plan(13, 9_950, 100, 125), null);
+  assert.notEqual(controller.plan(23, 9_950, 100, 125), null);
 });
 
 test("reset allows a new game to reuse the same tick cycle", () => {
@@ -165,12 +166,13 @@ test("always prioritizes adjacent neutral territory over a conquerable bot", () 
   assert.notEqual(controller.plan(3, 10_500, 100, 100, 512, 1023), null);
 });
 
-test("allows the tick-three correction after an acknowledged proactive expansion", () => {
+test("bundles an acknowledged proactive expansion instead of sending another attack at tick three", () => {
   const controller = createAutoExpandController();
   const proactive = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
   assert.notEqual(proactive, null);
   controller.acknowledge(512, proactive.encoded);
-  assert.notEqual(controller.plan(3, 9_950, 100, 125, 512), null);
+  assert.equal(controller.plan(3, 9_950, 100, 125, 512), null);
+  assert.notEqual(controller.plan(23, 9_950, 100, 125, 512), null);
 });
 
 test("does not duplicate a proactive expansion while its server event is pending", () => {
