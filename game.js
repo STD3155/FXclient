@@ -9190,8 +9190,18 @@ function aP9() {
 			aAW = aRo.j - 2 * aAW - aSp - gap,
 			aAW = (bD.rK.u1(s7.e, fY, uY, aAW, aSp), bD.rK.u1(aSj[4].button, fY + aAW + gap, uY, aSp, aSp), t3 = uY, .5 * (aRo.fa + aRo.k - (uY += aSp + gap) - gap));
 		bD.rK.u1(aSj[0].button, fY, uY, j, aAW), bD.rK.u1(aSj[1].button, fY + j + gap, uY, j, aAW), bD.rK.u1(aSj[2].button, fY, uY + aAW + gap, j, aAW), bD.rK.u1(aSj[3].button, fY + j + gap, uY + aAW + gap, j, aAW);
-		bD.rK.u1(aSj[5].button, fY, uY + aAW * 2 + gap * 2, j * 2 + gap, aAW / 3);
-		bD.rK.u1(aSj[6].button, fY, uY + aAW * 2.33 + gap * 3, j * 2 + gap, aAW / 3);
+		var fxMainHeight = aAW * 2 / 3 - gap,
+			fxSmallHeight = aAW / 3,
+			fxSecondRow = uY + fxMainHeight + gap,
+			fxSettingsRow = fxSecondRow + fxMainHeight + gap;
+		bD.rK.u1(aSj[0].button, fY, uY, j, fxMainHeight);
+		bD.rK.u1(aSj[1].button, fY + j + gap, uY, j, fxMainHeight);
+		bD.rK.u1(aSj[2].button, fY, fxSecondRow, j, fxMainHeight);
+		bD.rK.u1(aSj[3].button, fY + j + gap, fxSecondRow, j, fxMainHeight);
+		bD.rK.u1(aSj[5].button, fY, fxSettingsRow, j * 2 + gap, fxSmallHeight);
+		bD.rK.u1(aSj[6].button, fY, fxSettingsRow + fxSmallHeight + gap, j * 2 + gap, fxSmallHeight);
+		aSj[5].button.style.zIndex = aSj[6].button.style.zIndex = "8";
+		aSj[5].button.style.pointerEvents = aSj[6].button.style.pointerEvents = "auto";
 		for (var aC = 0; aC < aSj.length; aC++) aSj[aC].button.style.font = bD.rK.t8(0, bD.rK.vM(.065 * aRo.k)), bD.rK.rU(aSj[aC].button, 5);
 		s7.e.style.font = bD.rK.t8(0, bD.rK.vM(.08 * aRo.k)), bD.rK.rU(s7.e, 5)
 	}, this.vv = function() {
