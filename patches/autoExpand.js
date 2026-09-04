@@ -142,12 +142,12 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                     fxTick,
                     fxBalance,
                     fxAttackPercentage,
-                    fxBotCandidates
+                    fxBotCandidates,
+                    fxNeutralLayerSizes[0] > 0
                 );
                 fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
             }
-            if (fxAutoExpand === null && fxIsCorrectionTick && fxNeutralLayerSizes[0] > 0
-                && fxExistingNeutralAttack === 0) {
+            if (fxAutoExpand === null && fxIsCorrectionTick && fxNeutralLayerSizes[0] > 0) {
                 var fxNextIncome = __fx.autoExpand.calculateNextIncome(
                     fxBalance,
                     fxTerritory,

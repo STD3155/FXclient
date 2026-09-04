@@ -279,10 +279,11 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       const attack = calculateOpeningExpandAttack(balance, tick, neutralLayerSizes, normalPercentage, competitorNearby);
       return schedule(tick, "proactive", attack, target);
     },
-    planBot(tick, ownBalance, normalPercentage, candidates) {
+    planBot(tick, ownBalance, normalPercentage, candidates, neutralAvailable = false) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== triggerTick) return null;
+      if (neutralAvailable) return null;
       const attack = findAutoExpandBotAttack(ownBalance, normalPercentage, candidates);
       return schedule(tick, "correction", attack, attack?.target ?? null);
     },

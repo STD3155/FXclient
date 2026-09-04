@@ -158,6 +158,13 @@ test("tracks bot targets while waiting for the authoritative server event", () =
   assert.notEqual(controller.planBot(23, 10_000, 1023, candidates), null);
 });
 
+test("always prioritizes adjacent neutral territory over a conquerable bot", () => {
+  const controller = createAutoExpandController();
+  const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
+  assert.equal(controller.planBot(3, 10_000, 1023, candidates, true), null);
+  assert.notEqual(controller.plan(3, 10_500, 100, 100, 512, 1023), null);
+});
+
 test("allows the tick-three correction after an acknowledged proactive expansion", () => {
   const controller = createAutoExpandController();
   const proactive = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
