@@ -2,6 +2,20 @@
 	overflow-y: auto;
 }
 
+/* Keep client dialogs in one layer above the game-owned canvas and menu DOM. */
+#windowContainer {
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	pointer-events: none;
+}
+
+#windowContainer > .window,
+#windowContainer > .window-backdrop,
+#windowContainer > #replayTimebar {
+	pointer-events: auto;
+}
+
 ::-webkit-scrollbar {
 	width: 10px;
 }
@@ -30,7 +44,7 @@
 	font-size       : 20px;
 	font-size       : calc(13px + ((0.5 * (1.1vw - 0.1vh)) + 0.14rem));
 	max-height      : 90%;
-	z-index         : 10;
+	z-index         : 1;
 }
 
 .window-backdrop {
@@ -38,7 +52,7 @@
 	inset: 0;
 	background: rgba(0, 0, 0, 0.5);
 	backdrop-filter: blur(2px);
-	z-index: 9;
+	z-index: 0;
 }
 
 .window-close {

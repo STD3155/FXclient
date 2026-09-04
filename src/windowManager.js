@@ -49,6 +49,11 @@ function openWindow(windowName, ...args) {
     return;
   }
   if (windowObj.isOpen === true) return;
+  // The game appends and reorders its own full-screen elements while changing
+  // menus. Keeping our layer last prevents those elements from covering it.
+  if (container.parentElement === document.body && container !== document.body.lastElementChild) {
+    document.body.appendChild(container);
+  }
   if (windowObj.beforeOpen !== undefined) {
     try {
       windowObj.beforeOpen(...args);

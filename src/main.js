@@ -20,6 +20,7 @@ import pingFilter from './pingFilter.js';
 import nameFilter from './nameFilter.js';
 import followedAccounts from './followedAccounts.js';
 import notifications from './notifications.js';
+import economicAttack from './economicAttack.js';
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
@@ -53,5 +54,6 @@ __fx.pingFilter = pingFilter;
 __fx.nameFilter = nameFilter;
 __fx.followedAccounts = followedAccounts;
 __fx.notifications = notifications;
+__fx.economicAttack = economicAttack;
 
 console.log('Successfully loaded FX Client');
