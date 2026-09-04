@@ -7,6 +7,7 @@ export const AUTO_EXPAND_TRIGGER_TICK = 3;
 export const PROACTIVE_EXPAND_TRIGGER_TICK = 0;
 const PROACTIVE_HORIZON_CYCLES = 2;
 const PENDING_TIMEOUT_CYCLES = 3;
+const OPENING_END_TICK = 600;
 
 function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
@@ -39,8 +40,13 @@ export function calculateNextIncome(
   return interestIncome + armyIncome + territorialIncome;
 }
 
-export function calculateAutoExpandAttack(balance, territory, nextIncome) {
-  if (![balance, territory, nextIncome].every(Number.isFinite)) return null;
+function calculatePercentageLimit(balance, normalPercentage) {
+  normalPercentage = Math.max(0, Math.min(ATTACK_PARTS - 1, Math.floor(normalPercentage)));
+  return Math.floor(balance * (normalPercentage + 1) / ATTACK_PARTS);
+}
+
+export function calculateAutoExpandAttack(balance, territory, nextIncome, normalPercentage = ATTACK_PARTS - 1) {
+  if (![balance, territory, nextIncome, normalPercentage].every(Number.isFinite)) return null;
   balance = Math.max(0, Math.floor(balance));
   territory = Math.max(0, Math.floor(territory));
   nextIncome = Math.max(0, nextIncome);
@@ -51,7 +57,8 @@ export function calculateAutoExpandAttack(balance, territory, nextIncome) {
   if (overflow <= 0) return null;
 
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
-  const amount = Math.min(overflow, available);
+  const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
+  const amount = Math.min(overflow, available, percentageLimit);
   if (amount <= 0) return null;
 
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
@@ -59,7 +66,8 @@ export function calculateAutoExpandAttack(balance, territory, nextIncome) {
     encoded: Math.max(0, Math.min(ATTACK_PARTS - 1, encoded)),
     amount,
     overflow,
-    capacity
+    capacity,
+    percentageLimit
   };
 }
 
@@ -90,8 +98,14 @@ export function projectBalance(
   return projectedBalance;
 }
 
-export function calculateProactiveExpandAttack(balance, territory, projectedBalance, neutralFrontierTiles) {
-  if (![balance, territory, projectedBalance, neutralFrontierTiles].every(Number.isFinite)) return null;
+export function calculateProactiveExpandAttack(
+  balance,
+  territory,
+  projectedBalance,
+  neutralFrontierTiles,
+  normalPercentage = ATTACK_PARTS - 1
+) {
+  if (![balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage].every(Number.isFinite)) return null;
   balance = Math.max(0, Math.floor(balance));
   territory = Math.max(0, Math.floor(territory));
   projectedBalance = Math.max(0, Math.floor(projectedBalance));
@@ -107,7 +121,8 @@ export function calculateProactiveExpandAttack(balance, territory, projectedBala
   // three per currently reachable tile is the smallest reliable click.
   const amount = 3 * neutralFrontierTiles;
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
-  if (amount > available) return null;
+  const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
+  if (amount > available || amount > percentageLimit) return null;
 
   const encoded = Math.ceil(amount * ATTACK_PARTS / balance) - 1;
   return {
@@ -116,7 +131,77 @@ export function calculateProactiveExpandAttack(balance, territory, projectedBala
     capacity,
     projectedBalance,
     projectedOverflow,
-    expectedTerritoryGain: neutralFrontierTiles
+    expectedTerritoryGain: neutralFrontierTiles,
+    percentageLimit
+  };
+}
+
+export function calculateOpeningExpandAttack(
+  balance,
+  tick,
+  neutralLayerSizes,
+  normalPercentage,
+  competitorNearby = false
+) {
+  if (![balance, tick, normalPercentage].every(Number.isFinite) || !Array.isArray(neutralLayerSizes)) return null;
+  balance = Math.max(0, Math.floor(balance));
+  tick = Math.max(0, Math.floor(tick));
+  if (balance === 0 || tick >= OPENING_END_TICK) return null;
+
+  let maxShare;
+  let maxDepth;
+  if (tick < 100) {
+    maxShare = 0.12;
+    maxDepth = 3;
+  } else if (tick < 300) {
+    maxShare = 0.08;
+    maxDepth = 2;
+  } else {
+    maxShare = 0.05;
+    maxDepth = 2;
+  }
+  if (competitorNearby) {
+    maxShare = 0.15;
+    maxDepth = 3;
+  }
+
+  const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
+  const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
+  const phaseLimit = Math.floor(balance * maxShare);
+  const budget = Math.min(available, percentageLimit, phaseLimit);
+  if (budget <= 0) return null;
+
+  let previousTiles = 0;
+  let minimumAmount = 0;
+  let selectedAmount = 0;
+  let selectedDepth = 0;
+  let expectedTerritoryGain = 0;
+  const depth = Math.min(maxDepth, neutralLayerSizes.length);
+  for (let layer = 0; layer < depth; layer++) {
+    const layerSize = Math.max(0, Math.floor(neutralLayerSizes[layer] || 0));
+    if (layerSize === 0) break;
+
+    // Every completed prior layer costs two troops per tile. The next layer
+    // needs three troops per tile at the moment it is reached.
+    minimumAmount = Math.max(minimumAmount, 2 * previousTiles + 3 * layerSize);
+    if (minimumAmount > budget) break;
+    previousTiles += layerSize;
+    selectedAmount = minimumAmount;
+    selectedDepth = layer + 1;
+    expectedTerritoryGain = previousTiles;
+  }
+  if (selectedAmount <= 0) return null;
+
+  const encoded = Math.ceil(selectedAmount * ATTACK_PARTS / balance) - 1;
+  return {
+    encoded: Math.max(0, Math.min(ATTACK_PARTS - 1, encoded)),
+    amount: selectedAmount,
+    depth: selectedDepth,
+    expectedTerritoryGain,
+    budget,
+    percentageLimit,
+    phaseLimit,
+    competitorNearby: Boolean(competitorNearby)
   };
 }
 
@@ -173,18 +258,25 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
   }
 
   return {
-    plan(tick, balance, territory, nextIncome, target = null) {
+    plan(tick, balance, territory, nextIncome, target = null, normalPercentage = ATTACK_PARTS - 1) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== triggerTick) return null;
-      const attack = calculateAutoExpandAttack(balance, territory, nextIncome);
+      const attack = calculateAutoExpandAttack(balance, territory, nextIncome, normalPercentage);
       return schedule(tick, "correction", attack, target);
     },
-    planProactive(tick, balance, territory, projectedBalance, neutralFrontierTiles, target = null) {
+    planProactive(tick, balance, territory, projectedBalance, neutralFrontierTiles, target = null, normalPercentage = ATTACK_PARTS - 1) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== PROACTIVE_EXPAND_TRIGGER_TICK) return null;
-      const attack = calculateProactiveExpandAttack(balance, territory, projectedBalance, neutralFrontierTiles);
+      const attack = calculateProactiveExpandAttack(balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage);
+      return schedule(tick, "proactive", attack, target);
+    },
+    planOpening(tick, balance, neutralLayerSizes, normalPercentage, competitorNearby, target = null) {
+      if (!Number.isFinite(tick)) return null;
+      tick = Math.floor(tick);
+      if (positiveModulo(tick, 10) !== PROACTIVE_EXPAND_TRIGGER_TICK) return null;
+      const attack = calculateOpeningExpandAttack(balance, tick, neutralLayerSizes, normalPercentage, competitorNearby);
       return schedule(tick, "proactive", attack, target);
     },
     planBot(tick, ownBalance, normalPercentage, candidates) {
@@ -210,11 +302,13 @@ const controller = createAutoExpandController();
 export default {
   calculate: calculateAutoExpandAttack,
   calculateProactive: calculateProactiveExpandAttack,
+  calculateOpening: calculateOpeningExpandAttack,
   calculateNextIncome,
   projectBalance,
   findBotAttack: findAutoExpandBotAttack,
   plan: controller.plan,
   planProactive: controller.planProactive,
+  planOpening: controller.planOpening,
   planBot: controller.planBot,
   acknowledge: controller.acknowledge,
   reset: controller.reset

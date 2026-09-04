@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   calculateAutoExpandAttack,
   calculateNextIncome,
+  calculateOpeningExpandAttack,
   calculateProactiveExpandAttack,
   createAutoExpandController,
   findAutoExpandBotAttack,
@@ -24,6 +25,12 @@ test("sends only the projected amount above optimal growth density", () => {
 test("respects the reserve enforced by the game", () => {
   const attack = calculateAutoExpandAttack(2_000, 1, 5_000);
   assert.equal(attack.amount, 1_977);
+});
+
+test("never exceeds the configured attack percentage during a correction", () => {
+  const attack = calculateAutoExpandAttack(9_950, 100, 125, 0);
+  assert.equal(attack.percentageLimit, 9);
+  assert.equal(attack.amount, 9);
 });
 
 test("projects only the income that is actually paid on the next income tick", () => {
@@ -51,6 +58,38 @@ test("starts a minimal reliable neutral-front expansion before the projected cap
 test("does not start proactive expansion without a projected overflow or enough available troops", () => {
   assert.equal(calculateProactiveExpandAttack(9_900, 100, 10_000, 10), null);
   assert.equal(calculateProactiveExpandAttack(100, 1, 200, 40), null);
+  assert.equal(calculateProactiveExpandAttack(9_900, 100, 10_100, 10, 1), null);
+});
+
+test("opening expansion selects the deepest affordable neutral layer", () => {
+  const attack = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18], 1023, false);
+  assert.equal(attack.amount, 102);
+  assert.equal(attack.depth, 3);
+  assert.equal(attack.expectedTerritoryGain, 42);
+  assert.equal(attack.phaseLimit, 1_200);
+});
+
+test("opening aggression decreases by phase and increases near a competitor", () => {
+  const layers = [100, 150, 200];
+  const middle = calculateOpeningExpandAttack(10_000, 100, layers, 1023, false);
+  assert.equal(middle.depth, 2);
+  assert.equal(middle.phaseLimit, 800);
+
+  const late = calculateOpeningExpandAttack(10_000, 300, layers, 1023, false);
+  assert.equal(late.depth, 1);
+  assert.equal(late.phaseLimit, 500);
+
+  const contested = calculateOpeningExpandAttack(10_000, 300, layers, 1023, true);
+  assert.equal(contested.depth, 3);
+  assert.equal(contested.phaseLimit, 1_500);
+});
+
+test("opening expansion respects the slider and ends after tick 599", () => {
+  const sliderLimited = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18], 5, false);
+  assert.equal(sliderLimited.depth, 1);
+  assert.equal(sliderLimited.amount, 30);
+  assert.equal(sliderLimited.percentageLimit, 58);
+  assert.equal(calculateOpeningExpandAttack(10_000, 600, [10, 14, 18], 1023, true), null);
 });
 
 test("plans at tick three and never sends twice in one income cycle", () => {
