@@ -3,7 +3,8 @@ import test from "node:test";
 import {
   calculateAutoExpandAttack,
   calculateNextIncome,
-  createAutoExpandController
+  createAutoExpandController,
+  findAutoExpandBotAttack
 } from "../src/autoExpand.js";
 
 test("does nothing while the next income remains at or below 100% density", () => {
@@ -38,7 +39,7 @@ test("plans at tick three and never sends twice in one income cycle", () => {
   const attack = controller.plan(3, 9_950, 100, 125);
   assert.notEqual(attack, null);
   assert.equal(controller.plan(3, 9_950, 100, 125), null);
-  controller.acknowledge(attack.encoded);
+  controller.acknowledge(null, attack.encoded);
   assert.notEqual(controller.plan(13, 9_950, 100, 125), null);
 });
 
@@ -53,7 +54,7 @@ test("waits for the server acknowledgement before planning another attack", () =
   const controller = createAutoExpandController();
   const attack = controller.plan(3, 9_950, 100, 125);
   assert.equal(controller.plan(13, 9_950, 100, 125), null);
-  controller.acknowledge(attack.encoded);
+  controller.acknowledge(null, attack.encoded);
   assert.notEqual(controller.plan(23, 9_950, 100, 125), null);
 });
 
@@ -63,4 +64,37 @@ test("retries after a missing server acknowledgement times out", () => {
   assert.equal(controller.plan(13, 9_950, 100, 125), null);
   assert.equal(controller.plan(23, 9_950, 100, 125), null);
   assert.notEqual(controller.plan(33, 9_950, 100, 125), null);
+});
+
+test("attacks only bots that fit within the configured attack percentage", () => {
+  const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
+  assert.equal(findAutoExpandBotAttack(10_000, 20, candidates), null);
+
+  const attack = findAutoExpandBotAttack(10_000, 30, candidates);
+  assert.equal(attack.target, 8);
+  assert.equal(attack.required, 264);
+  assert.equal(attack.isSafe, true);
+});
+
+test("selects the conquerable bot with the best territory return", () => {
+  const attack = findAutoExpandBotAttack(10_000, 1023, [
+    { id: 8, balance: 100, territory: 20, existingAttack: 0 },
+    { id: 9, balance: 100, territory: 100, existingAttack: 0 }
+  ]);
+  assert.equal(attack.target, 9);
+});
+
+test("does not reinforce an attack that is already sufficient to conquer a bot", () => {
+  assert.equal(findAutoExpandBotAttack(10_000, 1023, [
+    { id: 8, balance: 100, territory: 20, existingAttack: 264 }
+  ]), null);
+});
+
+test("tracks bot targets while waiting for the authoritative server event", () => {
+  const controller = createAutoExpandController();
+  const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
+  const attack = controller.planBot(3, 10_000, 1023, candidates);
+  assert.equal(controller.planBot(13, 10_000, 1023, candidates), null);
+  controller.acknowledge(8, attack.encoded);
+  assert.notEqual(controller.planBot(23, 10_000, 1023, candidates), null);
 });

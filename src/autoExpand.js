@@ -1,3 +1,5 @@
+import { calculateEconomicAttack } from "./economicAttack.js";
+
 const OPTIMAL_GROWTH_DENSITY = 100;
 const SERVER_RESERVE_PARTS = 12;
 const ATTACK_PARTS = 1024;
@@ -59,31 +61,75 @@ export function calculateAutoExpandAttack(balance, territory, nextIncome) {
   };
 }
 
+export function findAutoExpandBotAttack(ownBalance, normalPercentage, candidates) {
+  if (!Array.isArray(candidates)) return null;
+
+  let best = null;
+  for (const candidate of candidates) {
+    if (!candidate || !Number.isFinite(candidate.id)) continue;
+    const targetBalance = Math.max(0, Math.floor(candidate.balance));
+    const targetTerritory = Math.max(0, Math.floor(candidate.territory));
+    const existingAttack = Math.max(0, Math.floor(candidate.existingAttack || 0));
+    const totalRequired = Math.ceil(2 * (targetBalance + targetTerritory) * 11 / 10);
+    if (existingAttack >= totalRequired) continue;
+
+    const attack = calculateEconomicAttack(
+      ownBalance,
+      targetBalance,
+      targetTerritory,
+      normalPercentage,
+      existingAttack
+    );
+    if (!attack?.isSafe) continue;
+
+    const value = targetTerritory / attack.required;
+    if (best === null || value > best.value || (value === best.value && attack.required < best.required)) {
+      best = {
+        ...attack,
+        target: Math.floor(candidate.id),
+        value
+      };
+    }
+  }
+  return best;
+}
+
 export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TICK) {
   let lastCycle = null;
   let pendingAttack = null;
 
+  function schedule(tick, attack, target = null) {
+    if (attack === null) return null;
+    const cycle = Math.floor(tick / 10);
+    if (cycle === lastCycle) return null;
+    lastCycle = cycle;
+
+    if (pendingAttack !== null) {
+      if (cycle - pendingAttack.cycle < PENDING_TIMEOUT_CYCLES) return null;
+      pendingAttack = null;
+    }
+
+    pendingAttack = { cycle, encoded: attack.encoded, target };
+    return attack;
+  }
+
   return {
-    plan(tick, balance, territory, nextIncome) {
+    plan(tick, balance, territory, nextIncome, target = null) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== triggerTick) return null;
-
-      const cycle = Math.floor(tick / 10);
-      if (cycle === lastCycle) return null;
-      lastCycle = cycle;
-
-      if (pendingAttack !== null) {
-        if (cycle - pendingAttack.cycle < PENDING_TIMEOUT_CYCLES) return null;
-        pendingAttack = null;
-      }
-
       const attack = calculateAutoExpandAttack(balance, territory, nextIncome);
-      if (attack !== null) pendingAttack = { cycle, encoded: attack.encoded };
-      return attack;
+      return schedule(tick, attack, target);
     },
-    acknowledge(encoded) {
-      if (pendingAttack !== null && pendingAttack.encoded === encoded) pendingAttack = null;
+    planBot(tick, ownBalance, normalPercentage, candidates) {
+      if (!Number.isFinite(tick)) return null;
+      tick = Math.floor(tick);
+      if (positiveModulo(tick, 10) !== triggerTick) return null;
+      const attack = findAutoExpandBotAttack(ownBalance, normalPercentage, candidates);
+      return schedule(tick, attack, attack?.target ?? null);
+    },
+    acknowledge(target, encoded) {
+      if (pendingAttack !== null && pendingAttack.target === target && pendingAttack.encoded === encoded) pendingAttack = null;
     },
     reset() {
       lastCycle = null;
@@ -97,7 +143,9 @@ const controller = createAutoExpandController();
 export default {
   calculate: calculateAutoExpandAttack,
   calculateNextIncome,
+  findBotAttack: findAutoExpandBotAttack,
   plan: controller.plan,
+  planBot: controller.planBot,
   acknowledge: controller.acknowledge,
   reset: controller.reset
 };

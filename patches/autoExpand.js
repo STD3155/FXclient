@@ -35,32 +35,67 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
         bC.ed();
         bi.ed();
         }`, `if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
-            && bi.kj() % 10 === 3 && bv.hx(aE.fB)) {
+            && bi.kj() % 10 === 3) {
             var fxPlayer = aE.fB;
             var fxTick = bi.kj();
             var fxBalance = ah.hT[fxPlayer];
             var fxTerritory = ah.hF[fxPlayer];
-            var fxArmyIncomeScale = aE.data.aIncomeType === 0 ? 0
-                : aE.data.aIncomeType === 1 ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer];
-            var fxTerritorialIncomeScale = aE.data.tIncomeType === 0 ? 32
-                : aE.data.tIncomeType === 1 ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer];
-            var fxNextIncome = __fx.autoExpand.calculateNextIncome(
-                fxBalance,
-                fxTerritory,
-                af.aCn(fxPlayer),
+            var fxHasNeutral = false;
+            var fxBotCandidates = [];
+            var fxSeenBots = new Set();
+            var fxBorder = ah.h7[fxPlayer];
+            var fxDirections = ad.fT;
+            for (var fxBorderIndex = fxBorder.length - 1; fxBorderIndex >= 0; fxBorderIndex--) {
+                for (var fxDirection = 3; fxDirection >= 0; fxDirection--) {
+                    var fxNeighbor = fxBorder[fxBorderIndex] + fxDirections[fxDirection];
+                    if (ad.fI(fxNeighbor)) {
+                        fxHasNeutral = true;
+                    } else if (ad.h1(fxNeighbor)) {
+                        var fxTarget = ad.fJ(fxNeighbor);
+                        if (fxTarget >= aE.km && fxTarget < aE.fO && !fxSeenBots.has(fxTarget)
+                            && bD.gn.hd(fxTarget) && bD.gn.lQ(fxPlayer, fxTarget)) {
+                            fxSeenBots.add(fxTarget);
+                            fxBotCandidates.push({
+                                id: fxTarget,
+                                balance: ah.hT[fxTarget],
+                                territory: ah.hF[fxTarget],
+                                existingAttack: ae.hU(fxPlayer, fxTarget)
+                            });
+                        }
+                    }
+                }
+            }
+            var fxAutoExpand = __fx.autoExpand.planBot(
                 fxTick,
-                fxArmyIncomeScale,
-                fxTerritorialIncomeScale
-            );
-            var fxAutoExpand = __fx.autoExpand.plan(
-                fxTick,
                 fxBalance,
-                fxTerritory,
-                fxNextIncome
+                aS.hv(),
+                fxBotCandidates
             );
+            var fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
+            if (fxAutoExpand === null && fxHasNeutral) {
+                var fxArmyIncomeScale = aE.data.aIncomeType === 0 ? 0
+                    : aE.data.aIncomeType === 1 ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer];
+                var fxTerritorialIncomeScale = aE.data.tIncomeType === 0 ? 32
+                    : aE.data.tIncomeType === 1 ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer];
+                var fxNextIncome = __fx.autoExpand.calculateNextIncome(
+                    fxBalance,
+                    fxTerritory,
+                    af.aCn(fxPlayer),
+                    fxTick,
+                    fxArmyIncomeScale,
+                    fxTerritorialIncomeScale
+                );
+                fxAutoExpand = __fx.autoExpand.plan(
+                    fxTick,
+                    fxBalance,
+                    fxTerritory,
+                    fxNextIncome,
+                    aE.fO
+                );
+            }
             if (fxAutoExpand !== null) {
-                if (aE.l6) bB.pg.hy(fxPlayer, fxAutoExpand.encoded, aE.fO);
-                else b1.pm.pq(fxAutoExpand.encoded, aE.fO);
+                if (aE.l6) bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget);
+                else b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget);
             }
         }`)
 
@@ -68,6 +103,6 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
     // applied. This avoids duplicate sends when a server response is delayed.
     replaceRawCode(
         `this.hy=function(player,j4,jv){if(!bD.gn.hc(1)){return}if(!bD.gn.hd(player)){return}if(!bD.gn.qh(player,jv)){return}`,
-        `this.hy=function(player,j4,jv){if(!bD.gn.hc(1)){return}if(!bD.gn.hd(player)){return}if(!bD.gn.qh(player,jv)){return}if(player===aE.fB&&jv===aE.fO){__fx.autoExpand.acknowledge(j4)}`
+        `this.hy=function(player,j4,jv){if(!bD.gn.hc(1)){return}if(!bD.gn.hd(player)){return}if(!bD.gn.qh(player,jv)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(jv,j4)}`
     )
 }
