@@ -1011,27 +1011,41 @@ function my() {
 
 function n0() {
 	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3)) {
-		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxSeenNeutral = new Set, fxBotCandidates = [], fxSeenBots = new Set, fxBorder = ah.h7[fxPlayer],
-				fxDirections = ad.fT, fxBorderIndex = fxBorder.length - 1; 0 <= fxBorderIndex; fxBorderIndex--)
+		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxSeenNeutral = new Set, fxCompetitorNearby = !1, fxBotCandidates = [], fxSeenBots = new Set,
+				fxBorder = ah.h7[fxPlayer], fxDirections = ad.fT, fxBorderIndex = fxBorder.length - 1; 0 <= fxBorderIndex; fxBorderIndex--)
 			for (var fxDirection = 3; 0 <= fxDirection; fxDirection--) {
 				var fxNeighbor = fxBorder[fxBorderIndex] + fxDirections[fxDirection];
-				ad.fI(fxNeighbor) ? fxSeenNeutral.add(fxNeighbor) : fxIsCorrectionTick && ad.h1(fxNeighbor) && (fxNeighbor = ad.fJ(fxNeighbor)) >= aE.km && fxNeighbor < aE.fO && !fxSeenBots.has(fxNeighbor) && bD.gn.hd(fxNeighbor) && bD.gn.lQ(
-					fxPlayer, fxNeighbor) && (fxSeenBots.add(fxNeighbor), fxBotCandidates.push({
-					id: fxNeighbor,
-					balance: ah.hT[fxNeighbor],
-					territory: ah.hF[fxNeighbor],
-					existingAttack: ae.hU(fxPlayer, fxNeighbor)
-				}))
+				ad.fI(fxNeighbor) ? fxSeenNeutral.add(fxNeighbor) : ad.h1(fxNeighbor) && ((fxNeighbor = ad.fJ(fxNeighbor)) < aE.km && fxNeighbor !== fxPlayer && bD.gn.hd(fxNeighbor) && bD.gn.lQ(fxPlayer, fxNeighbor) ? fxCompetitorNearby = !0 :
+					fxIsCorrectionTick && fxNeighbor >= aE.km && fxNeighbor < aE.fO && !fxSeenBots.has(fxNeighbor) && bD.gn.hd(fxNeighbor) && bD.gn.lQ(fxPlayer, fxNeighbor) && (fxSeenBots.add(fxNeighbor), fxBotCandidates.push({
+						id: fxNeighbor,
+						balance: ah.hT[fxNeighbor],
+						territory: ah.hF[fxNeighbor],
+						existingAttack: ae.hU(fxPlayer, fxNeighbor)
+					})))
+			}
+		var fxNeutralLayerSizes = [fxSeenNeutral.size];
+		if (!fxIsCorrectionTick && 0 < fxSeenNeutral.size)
+			for (var fxNeutralLayer = Array.from(fxSeenNeutral), fxLayerDepth = 1; fxLayerDepth < 3; fxLayerDepth++) {
+				for (var fxNextNeutralLayer = [], fxLayerIndex = fxNeutralLayer.length - 1; 0 <= fxLayerIndex; fxLayerIndex--)
+					for (var fxLayerDirection = 3; 0 <= fxLayerDirection; fxLayerDirection--) {
+						var fxLayerNeighbor = fxNeutralLayer[fxLayerIndex] + fxDirections[fxLayerDirection];
+						ad.fW(fxLayerNeighbor) && (ad.fI(fxLayerNeighbor) ? fxSeenNeutral.has(fxLayerNeighbor) || (fxSeenNeutral.add(fxLayerNeighbor), fxNextNeutralLayer.push(fxLayerNeighbor)) : ad.h1(fxLayerNeighbor) && (fxLayerNeighbor = ad.fJ(
+							fxLayerNeighbor)) < aE.km && fxLayerNeighbor !== fxPlayer && bD.gn.hd(fxLayerNeighbor) && bD.gn.lQ(fxPlayer, fxLayerNeighbor) && (fxCompetitorNearby = !0))
+					}
+				if (fxNeutralLayerSizes.push(fxNextNeutralLayer.length), 0 === (fxNeutralLayer = fxNextNeutralLayer).length) break
 			}
 		var fxProjectedBalance, fxArmyIncomeScale = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer],
 			fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 === aE.data.tIncomeType ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer],
 			fxAutoExpand = null,
-			fxAutoExpandTarget = aE.fO;
-		!fxIsCorrectionTick && 0 < fxSeenNeutral.size ? (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxArmyIncomeScale, fxTerritorialIncomeScale, 2), fxAutoExpand = __fx.autoExpand
-			.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxSeenNeutral.size, aE.fO)) : fxIsCorrectionTick && (fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planBot(fxTick, fxBalance, aS.hv(),
-			fxBotCandidates)) ? aE.fO : fxAutoExpand.target), null === fxAutoExpand && fxIsCorrectionTick && 0 < fxSeenNeutral.size && (fxProjectedBalance = __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick,
-			fxArmyIncomeScale, fxTerritorialIncomeScale), fxAutoExpand = __fx.autoExpand.plan(fxTick, fxBalance, fxTerritory, fxProjectedBalance, aE.fO)), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded,
-			fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
+			fxAutoExpandTarget = aE.fO,
+			fxAttackPercentage = aS.hv(),
+			fxExistingNeutralAttack = ae.hU(fxPlayer, aE.fO);
+		!fxIsCorrectionTick && 0 < fxNeutralLayerSizes[0] && 0 === fxExistingNeutralAttack ? fxAutoExpand = fxTick < 600 ? __fx.autoExpand.planOpening(fxTick, fxBalance, fxNeutralLayerSizes, fxAttackPercentage, fxCompetitorNearby, aE.fO) : (
+			fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxArmyIncomeScale, fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance,
+				fxNeutralLayerSizes[0], aE.fO, fxAttackPercentage)) : fxIsCorrectionTick && (fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planBot(fxTick, fxBalance, fxAttackPercentage, fxBotCandidates)) ? aE.fO : fxAutoExpand
+			.target), null === fxAutoExpand && fxIsCorrectionTick && 0 < fxNeutralLayerSizes[0] && 0 === fxExistingNeutralAttack && (fxProjectedBalance = __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick,
+			fxArmyIncomeScale, fxTerritorialIncomeScale), fxAutoExpand = __fx.autoExpand.plan(fxTick, fxBalance, fxTerritory, fxProjectedBalance, aE.fO, fxAttackPercentage)), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand
+			.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
 	}
 	af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
 		.ed(), bi.ed()
