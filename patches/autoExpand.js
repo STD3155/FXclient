@@ -36,7 +36,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
         bC.ed();
         bi.ed();
         }`, `if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
-            && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3) && __fx.autoExpand.canAttempt(bi.kj())) {
+            && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3)) {
             var fxPlayer = aE.fB;
             var fxTick = bi.kj();
             var fxIsCorrectionTick = fxTick % 10 === 3;

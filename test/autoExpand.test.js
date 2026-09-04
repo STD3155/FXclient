@@ -99,8 +99,7 @@ test("plans at tick three and never sends twice in one income cycle", () => {
   assert.notEqual(attack, null);
   assert.equal(controller.plan(3, 9_950, 100, 125), null);
   controller.acknowledge(null, attack.encoded);
-  assert.equal(controller.plan(13, 9_950, 100, 125), null);
-  assert.notEqual(controller.plan(23, 9_950, 100, 125), null);
+  assert.notEqual(controller.plan(13, 9_950, 100, 125), null);
 });
 
 test("reset allows a new game to reuse the same tick cycle", () => {
@@ -166,17 +165,33 @@ test("always prioritizes adjacent neutral territory over a conquerable bot", () 
   assert.notEqual(controller.plan(3, 10_500, 100, 100, 512, 1023), null);
 });
 
-test("bundles an acknowledged proactive expansion instead of sending another attack at tick three", () => {
+test("lets an urgent growth correction bypass the neutral expansion cooldown", () => {
   const controller = createAutoExpandController();
   const proactive = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
   assert.notEqual(proactive, null);
   controller.acknowledge(512, proactive.encoded);
-  assert.equal(controller.plan(3, 9_950, 100, 125, 512), null);
-  assert.notEqual(controller.plan(23, 9_950, 100, 125, 512), null);
+  assert.notEqual(controller.plan(3, 9_950, 100, 125, 512), null);
 });
 
 test("does not duplicate a proactive expansion while its server event is pending", () => {
   const controller = createAutoExpandController();
   assert.notEqual(controller.planProactive(0, 9_900, 100, 10_100, 10, 512), null);
   assert.equal(controller.plan(3, 9_950, 100, 125, 512), null);
+});
+
+test("cooldown bundles only non-urgent attacks against neutral territory", () => {
+  const controller = createAutoExpandController();
+  const first = controller.planOpening(0, 10_000, [10, 14, 18], 1023, false, 512);
+  assert.notEqual(first, null);
+  controller.acknowledge(512, first.encoded);
+  assert.equal(controller.planOpening(10, 10_000, [10, 14, 18], 1023, false, 512), null);
+  assert.notEqual(controller.planOpening(20, 10_000, [10, 14, 18], 1023, false, 512), null);
+});
+
+test("neutral cooldown never delays an eligible bot attack", () => {
+  const controller = createAutoExpandController();
+  const neutral = controller.planOpening(0, 10_000, [10, 14, 18], 1023, false, 512);
+  controller.acknowledge(512, neutral.encoded);
+  const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
+  assert.notEqual(controller.planBot(3, 10_000, 1023, candidates), null);
 });

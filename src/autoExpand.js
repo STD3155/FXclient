@@ -242,54 +242,49 @@ export function findAutoExpandBotAttack(ownBalance, normalPercentage, candidates
 export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TICK) {
   const lastCycleByPhase = { proactive: null, correction: null };
   let pendingAttack = null;
-  let lastAttackTick = null;
+  let lastNeutralAttackTick = null;
 
-  function canAttempt(tick) {
-    if (!Number.isFinite(tick)) return false;
-    tick = Math.floor(tick);
-    if (lastAttackTick !== null && tick - lastAttackTick < MIN_AUTO_ATTACK_INTERVAL_TICKS) return false;
-    if (pendingAttack !== null && Math.floor(tick / 10) - pendingAttack.cycle < PENDING_TIMEOUT_CYCLES) return false;
-    return true;
-  }
-
-  function schedule(tick, phase, attack, target = null) {
+  function schedule(tick, phase, attack, target = null, useNeutralCooldown = false, bypassNeutralCooldown = false) {
     if (attack === null) return null;
     const cycle = Math.floor(tick / 10);
     if (cycle === lastCycleByPhase[phase]) return null;
-    if (!canAttempt(tick)) return null;
+    if (useNeutralCooldown && !bypassNeutralCooldown && lastNeutralAttackTick !== null
+      && tick - lastNeutralAttackTick < MIN_AUTO_ATTACK_INTERVAL_TICKS) return null;
 
     if (pendingAttack !== null) {
+      if (cycle - pendingAttack.cycle < PENDING_TIMEOUT_CYCLES) return null;
       pendingAttack = null;
     }
 
     lastCycleByPhase[phase] = cycle;
-    lastAttackTick = tick;
+    if (useNeutralCooldown) lastNeutralAttackTick = tick;
     pendingAttack = { cycle, encoded: attack.encoded, target };
     return attack;
   }
 
   return {
-    canAttempt,
     plan(tick, balance, territory, nextIncome, target = null, normalPercentage = ATTACK_PARTS - 1) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== triggerTick) return null;
       const attack = calculateAutoExpandAttack(balance, territory, nextIncome, normalPercentage);
-      return schedule(tick, "correction", attack, target);
+      // A correction exists only when the next payout would cross the growth
+      // cap, so it is allowed to reinforce neutral expansion immediately.
+      return schedule(tick, "correction", attack, target, true, true);
     },
     planProactive(tick, balance, territory, projectedBalance, neutralFrontierTiles, target = null, normalPercentage = ATTACK_PARTS - 1) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== PROACTIVE_EXPAND_TRIGGER_TICK) return null;
       const attack = calculateProactiveExpandAttack(balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage);
-      return schedule(tick, "proactive", attack, target);
+      return schedule(tick, "proactive", attack, target, true, false);
     },
     planOpening(tick, balance, neutralLayerSizes, normalPercentage, competitorNearby, target = null) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
       if (positiveModulo(tick, 10) !== PROACTIVE_EXPAND_TRIGGER_TICK) return null;
       const attack = calculateOpeningExpandAttack(balance, tick, neutralLayerSizes, normalPercentage, competitorNearby);
-      return schedule(tick, "proactive", attack, target);
+      return schedule(tick, "proactive", attack, target, true, false);
     },
     planBot(tick, ownBalance, normalPercentage, candidates, neutralAvailable = false) {
       if (!Number.isFinite(tick)) return null;
@@ -306,7 +301,7 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       lastCycleByPhase.proactive = null;
       lastCycleByPhase.correction = null;
       pendingAttack = null;
-      lastAttackTick = null;
+      lastNeutralAttackTick = null;
     }
   };
 }
@@ -320,7 +315,6 @@ export default {
   calculateNextIncome,
   projectBalance,
   findBotAttack: findAutoExpandBotAttack,
-  canAttempt: controller.canAttempt,
   plan: controller.plan,
   planProactive: controller.planProactive,
   planOpening: controller.planOpening,
