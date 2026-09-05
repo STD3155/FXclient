@@ -70,8 +70,8 @@ function toggle() {
   return armed;
 }
 
-function reset() {
-  setArmed(false);
+function reset(enabled = false) {
+  setArmed(Boolean(enabled));
 }
 
 function resolve(normalPercentage, ownBalance, targetBalance, targetTerritory, existingAttack) {

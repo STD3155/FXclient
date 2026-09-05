@@ -4,7 +4,6 @@ import {
   analyzeExpansionFrontier,
   calculateAutoExpandAttack,
   calculateNextIncome,
-  calculateOpeningExpandAttack,
   calculateProactiveExpandAttack,
   createAutoExpandController,
   findAutoExpandBotAttack,
@@ -90,47 +89,15 @@ test("does not start proactive expansion without a projected overflow or enough 
   assert.equal(calculateProactiveExpandAttack(9_900, 100, 10_100, 10, 1), null);
 });
 
-test("opening expansion selects the deepest affordable neutral layer", () => {
-  const attack = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18, 22, 26], 204, false);
-  assert.equal(attack.minimumAmount, 206);
-  assert.equal(attack.amount, 206);
-  assert.equal(attack.encoded, 21);
-  assert.equal(attack.depth, 5);
-  assert.equal(attack.expectedTerritoryGain, 90);
-});
-
-test("opening search depth decreases by phase and increases near a competitor", () => {
-  const layers = [10, 15, 20, 25, 30];
-  const middle = calculateOpeningExpandAttack(10_000, 100, layers, 1023, false);
-  assert.equal(middle.depth, 4);
-  assert.equal(middle.amount, 165);
-
-  const late = calculateOpeningExpandAttack(10_000, 300, layers, 1023, false);
-  assert.equal(late.depth, 3);
-  assert.equal(late.amount, 110);
-
-  const contested = calculateOpeningExpandAttack(10_000, 300, layers, 1023, true);
-  assert.equal(contested.depth, 5);
-  assert.equal(contested.amount, 230);
-});
-
-test("opening expansion respects the slider and ends after tick 599", () => {
-  const sliderLimited = calculateOpeningExpandAttack(10_000, 0, [10, 14, 18], 5, false);
-  assert.equal(sliderLimited.depth, 1);
-  assert.equal(sliderLimited.minimumAmount, 30);
-  assert.equal(sliderLimited.amount, 30);
-  assert.equal(sliderLimited.percentageLimit, 58);
-  assert.equal(calculateOpeningExpandAttack(10_000, 600, [10, 14, 18], 1023, true), null);
-});
-
-test("plans at tick three and never sends twice in one income cycle", () => {
+test("plans at tick three and enforces a cooldown after acknowledgement", () => {
   const controller = createAutoExpandController();
   assert.equal(controller.plan(2, 9_950, 100, 125), null);
   const attack = controller.plan(3, 9_950, 100, 125);
   assert.notEqual(attack, null);
   assert.equal(controller.plan(3, 9_950, 100, 125), null);
   controller.acknowledge(null, attack.encoded);
-  assert.notEqual(controller.plan(13, 9_950, 100, 125), null);
+  assert.equal(controller.plan(13, 9_950, 100, 125), null);
+  assert.notEqual(controller.plan(53, 9_950, 100, 125), null);
 });
 
 test("reset allows a new game to reuse the same tick cycle", () => {
@@ -145,15 +112,17 @@ test("waits for the server acknowledgement before planning another attack", () =
   const attack = controller.plan(3, 9_950, 100, 125);
   assert.equal(controller.plan(13, 9_950, 100, 125), null);
   controller.acknowledge(null, attack.encoded);
-  assert.notEqual(controller.plan(23, 9_950, 100, 125), null);
+  assert.equal(controller.plan(23, 9_950, 100, 125), null);
+  assert.notEqual(controller.plan(53, 9_950, 100, 125), null);
 });
 
-test("retries after a missing server acknowledgement times out", () => {
+test("retries a missing acknowledgement only after the cooldown also expires", () => {
   const controller = createAutoExpandController();
   assert.notEqual(controller.plan(3, 9_950, 100, 125), null);
   assert.equal(controller.plan(13, 9_950, 100, 125), null);
   assert.equal(controller.plan(23, 9_950, 100, 125), null);
-  assert.notEqual(controller.plan(33, 9_950, 100, 125), null);
+  assert.equal(controller.plan(33, 9_950, 100, 125), null);
+  assert.notEqual(controller.plan(53, 9_950, 100, 125), null);
 });
 
 test("attacks only bots that fit within the configured attack percentage", () => {
@@ -186,7 +155,8 @@ test("tracks bot targets while waiting for the authoritative server event", () =
   const attack = controller.planBot(3, 10_000, 1023, candidates);
   assert.equal(controller.planBot(13, 10_000, 1023, candidates), null);
   controller.acknowledge(8, attack.encoded);
-  assert.notEqual(controller.planBot(23, 10_000, 1023, candidates), null);
+  assert.equal(controller.planBot(23, 10_000, 1023, candidates), null);
+  assert.notEqual(controller.planBot(53, 10_000, 1023, candidates), null);
 });
 
 test("prioritizes an actionable neutral correction over a conquerable bot", () => {
@@ -205,12 +175,13 @@ test("falls back to a conquerable bot when neutral expansion is not actionable",
   assert.equal(attack.target, 8);
 });
 
-test("lets an urgent growth correction bypass the neutral expansion cooldown", () => {
+test("an urgent growth correction cannot bypass the cooldown", () => {
   const controller = createAutoExpandController();
   const proactive = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
   assert.notEqual(proactive, null);
   controller.acknowledge(512, proactive.encoded);
-  assert.notEqual(controller.plan(3, 9_950, 100, 125, 512), null);
+  assert.equal(controller.plan(3, 9_950, 100, 125, 512), null);
+  assert.notEqual(controller.plan(53, 9_950, 100, 125, 512), null);
 });
 
 test("does not duplicate a proactive expansion while its server event is pending", () => {
@@ -219,19 +190,64 @@ test("does not duplicate a proactive expansion while its server event is pending
   assert.equal(controller.plan(3, 9_950, 100, 125, 512), null);
 });
 
-test("cooldown bundles only non-urgent attacks against neutral territory", () => {
+test("cooldown delays every neutral expansion phase", () => {
   const controller = createAutoExpandController();
-  const first = controller.planOpening(0, 10_000, [10, 14, 18], 1023, false, 512);
-  assert.notEqual(first, null);
+  const first = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
   controller.acknowledge(512, first.encoded);
-  assert.equal(controller.planOpening(10, 10_000, [10, 14, 18], 1023, false, 512), null);
-  assert.notEqual(controller.planOpening(20, 10_000, [10, 14, 18], 1023, false, 512), null);
+  assert.equal(controller.planProactive(20, 9_900, 100, 10_100, 10, 512), null);
+  assert.equal(controller.planCorrection(23, 10_500, 100, 100, 10, 512, 1023, []), null);
+  assert.equal(controller.planOpening(30, 10_000, [10, 14, 18], 1023, false, 512), null);
+  assert.notEqual(controller.planProactive(50, 9_900, 100, 10_100, 10, 512), null);
 });
 
-test("neutral cooldown never delays an eligible bot attack", () => {
+test("neutral and bot attacks share the same cooldown in both directions", () => {
   const controller = createAutoExpandController();
-  const neutral = controller.planOpening(0, 10_000, [10, 14, 18], 1023, false, 512);
+  const neutral = controller.planProactive(0, 9_900, 100, 10_100, 10, 512);
   controller.acknowledge(512, neutral.encoded);
   const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
-  assert.notEqual(controller.planBot(3, 10_000, 1023, candidates), null);
+  assert.equal(controller.planBot(3, 10_000, 1023, candidates), null);
+  const bot = controller.planBot(53, 10_000, 1023, candidates);
+  assert.notEqual(bot, null);
+  controller.acknowledge(8, bot.encoded);
+  assert.equal(controller.planProactive(60, 9_900, 100, 10_100, 10, 512), null);
+  assert.notEqual(controller.plan(103, 9_950, 100, 125, 512), null);
+});
+
+test("does not reinforce neutral troops still expanding on the map", () => {
+  const controller = createAutoExpandController();
+  assert.equal(controller.planCorrection(3, 10_500, 100, 100, 10, 512, 1023, [], 2, 100), null);
+  assert.notEqual(controller.planCorrection(13, 10_500, 100, 100, 10, 512, 1023, [], 2, 0), null);
+});
+
+test("shows the cooldown from acceptance and keeps it after unrelated events", () => {
+  const controller = createAutoExpandController();
+  const attack = controller.plan(3, 9_950, 100, 125, 512);
+  controller.acknowledge(8, attack.encoded);
+  assert.equal(controller.getStatus().pending, true);
+  controller.acknowledge(512, attack.encoded, 10);
+  assert.deepEqual(controller.getStatus(), { remainingTicks: 50, remainingSeconds: 2.8, pending: false });
+  controller.update(35);
+  assert.equal(controller.getStatus().remainingSeconds, 1.4);
+  assert.equal(controller.canPlan(59), false);
+  assert.equal(controller.canPlan(60), true);
+  controller.update(60);
+  assert.equal(controller.getStatus().remainingSeconds, 0);
+  controller.reset();
+  assert.equal(controller.canPlan(0), true);
+});
+
+test("a manual attack gives automatic expansion the same recovery period", () => {
+  const controller = createAutoExpandController();
+  controller.acknowledge(8, 50, 0);
+  assert.equal(controller.plan(3, 9_950, 100, 125), null);
+  assert.notEqual(controller.plan(53, 9_950, 100, 125), null);
+});
+
+test("frontier limits retain only complete layers so the budget is not underestimated", () => {
+  const neutral = new Set([1, 2, 3, 4, 5]);
+  const result = analyzeExpansionFrontier({
+    border: [0], directions: [1, 2], isNeutral: cell => neutral.has(cell), getOwner: () => null,
+    maxDepth: 5, maxNeutralTiles: 3
+  });
+  assert.deepEqual(result.neutralLayerSizes, [2]);
 });

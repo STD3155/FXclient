@@ -25,9 +25,10 @@ export default (/** @type {ModUtils} */ modUtils) => {
 		mainCanvas = mainCanvasElement.getContext("2d", { alpha: /* here */ false });`,
     `__fx.makeMainMenuTransparent ? true :`)
 
-	// Reset donation history and leaderboard filter when a new game is started
+	// Start each live game with automatic expansion enabled and fresh state.
+	const { game, gIsReplay } = modUtils.dictionary;
 	insertCode(`an.init();ai.a5l();bA.pQ.qC = [];bA.hZ.pT = 1;/* here */`,
-		`__fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.economicAttack.reset(), __fx.autoExpand.reset(), __fx.customLobby.isActive() && __fx.customLobby.hideWindow();`);
+		`__fx.donationsTracker.reset(), __fx.leaderboardFilter.reset(), __fx.utils.playerGrowth = [], __fx.utils.playerGrowthText = [], __fx.autoExpand.reset(), __fx.economicAttack.reset(!${game}.${gIsReplay}), __fx.customLobby.isActive() && __fx.customLobby.hideWindow();`);
 
     waitForMinification(() => applyPatches(modUtils))
 }

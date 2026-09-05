@@ -1,6 +1,7 @@
 import { getUIGap, getVar } from "./gameInterface.js";
 import { getSettings } from "./settings.js";
 import economicAttack from "./economicAttack.js";
+import autoExpand from "./autoExpand.js";
 
 export const keybindFunctions = {
     setAbsolute: () => {},
@@ -38,15 +39,24 @@ function renderMobileButtons() {
 
     const gap = getUIGap() / 4;
     const buttonWidth = (width - gap * (slotCount - 1)) / slotCount;
-    const drawButton = (index, label, active = false) => {
+    const drawButton = (index, label, active = false, remainingSeconds = 0) => {
         const x = index * (buttonWidth + gap);
         ctx.fillStyle = active ? "rgba(0, 125, 35, 0.92)" : "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(x, 0, buttonWidth, height);
         ctx.fillStyle = "white";
-        ctx.fillText(label, x + buttonWidth / 2, height / 2);
+        if (remainingSeconds > 0) {
+            ctx.font = "bold " + height * 0.36 + "px " + fontName;
+            ctx.fillText(label, x + buttonWidth / 2, height * 0.30, buttonWidth - 4);
+            ctx.font = height * 0.30 + "px " + fontName;
+            ctx.fillText(remainingSeconds.toFixed(1) + "s", x + buttonWidth / 2, height * 0.74, buttonWidth - 4);
+            ctx.font = "bold " + height / 2 + "px " + fontName;
+        } else {
+            ctx.fillText(label, x + buttonWidth / 2, height / 2);
+        }
     };
 
-    drawButton(0, economicAttack.isArmed() ? "ECO ✓" : "ECO", economicAttack.isArmed());
+    const armed = economicAttack.isArmed();
+    drawButton(0, armed ? "ECO ✓" : "ECO", armed, armed ? autoExpand.getStatus().remainingSeconds : 0);
     if (getSettings().keybindButtons !== true) return;
     getSettings().attackPercentageKeybinds.slice(0, keybindCount).forEach((keybind, i) => {
         const label = keybind.type === "absolute" ? (keybind.value * 100).toFixed() + "%" : "x " + Math.round(keybind.value * 100) / 100;
@@ -96,6 +106,14 @@ export const mobileKeybinds = {
 }
 
 economicAttack.subscribe(() => {
+    // The game-start reset runs before the attack bar's first initialization.
+    if (!canvas) return;
+    renderMobileButtons();
+    keybindFunctions.repaintAttackPercentageBar();
+});
+
+autoExpand.subscribe(() => {
+    if (!canvas || !economicAttack.isArmed()) return;
     renderMobileButtons();
     keybindFunctions.repaintAttackPercentageBar();
 });

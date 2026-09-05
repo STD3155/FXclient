@@ -1,7 +1,6 @@
 export default (/** @type {import('../modUtils.js').default} */ { insertCode, replaceRawCode }) => {
-    // Start a small, land-aware expansion after an income tick when the
-    // two-cycle forecast reaches the growth limit. Tick three remains the
-    // authoritative safety correction and bot-opportunity pass.
+    // Plan the opening around territorial income; all automatic sends share
+    // a cooldown, including correction and bot attacks.
     insertCode(`function n0() {
         b2.ed();
         aH.ed();
@@ -35,7 +34,10 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
         bX.eQ.ed();
         bC.ed();
         bi.ed();
-        }`, `if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
+        }`, `if (__fx.economicAttack.isArmed()) __fx.autoExpand.update(bi.kj(), bi.aCo);
+        if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
+            && __fx.autoExpand.canPlan(bi.kj())
+            && (bi.kj() >= 600 || bi.kj() % 10 === 3 || __fx.autoExpand.shouldPlanOpening(bi.kj()))
             && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3)) {
             var fxPlayer = aE.fB;
             var fxTick = bi.kj();
@@ -49,14 +51,15 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                 directions: fxDirections,
                 isNeutral: function(fxCell) { return ad.fI(fxCell); },
                 getOwner: function(fxCell) { return ad.h1(fxCell) ? ad.fJ(fxCell) : null; },
-                maxDepth: fxIsCorrectionTick ? 1 : 5,
-                ownerSearchDepth: 2
+                maxDepth: fxIsCorrectionTick || fxTick >= 600 ? 1 : __fx.autoExpand.openingFrontierDepth,
+                maxNeutralTiles: __fx.autoExpand.openingFrontierTileLimit,
+                ownerSearchDepth: fxTick < 600 ? 6 : 2
             });
             var fxNeutralLayerSizes = fxAnalysis.neutralLayerSizes;
             var fxCompetitorNearby = false;
             for (var fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; fxOwnerIndex >= 0; fxOwnerIndex--) {
                 var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
-                if (fxOwner < aE.km && fxOwner !== fxPlayer && bD.gn.hd(fxOwner)
+                if (fxOwner < aE.fO && fxOwner !== fxPlayer && bD.gn.hd(fxOwner)
                     && bD.gn.lQ(fxPlayer, fxOwner)) {
                     fxCompetitorNearby = true;
                     break;
@@ -94,7 +97,17 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                         fxAttackPercentage,
                         fxCompetitorNearby,
                         aE.fO,
-                        aE.gl
+                        aE.gl,
+                        {
+                            territory: fxTerritory,
+                            armyIncomeScale: fxArmyIncomeScale,
+                            territorialIncomeScale: fxTerritorialIncomeScale,
+                            interestScale: aE.data.iIncomeType === 0 ? 64
+                                : aE.data.iIncomeType === 1 ? aE.data.iIncomeValue : aE.data.iIncomeData[fxPlayer],
+                            mapTerritory: aE.kW,
+                            maxPlayers: aE.fO,
+                            commandDelayTicks: aE.l6 ? 0 : 10
+                        }
                     );
                 } else {
                     var fxProjectedBalance = __fx.autoExpand.projectBalance(
@@ -117,7 +130,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                         aE.gl
                     );
                 }
-            } else if (fxIsCorrectionTick) {
+            } else if (fxIsCorrectionTick && (fxTick >= 600 || !fxNeutralLayerSizes[0])) {
                 var fxNextIncome = fxNeutralLayerSizes[0] > 0
                     ? __fx.autoExpand.calculateNextIncome(
                         fxBalance,
@@ -137,7 +150,8 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                     aE.fO,
                     fxAttackPercentage,
                     fxBotCandidates,
-                    aE.gl
+                    aE.gl,
+                    fxExistingNeutralAttack
                 );
                 fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
             }
@@ -151,6 +165,6 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
     // validation and created or reinforced the attack.
     replaceRawCode(
         `if(!ap.jX.jl(player,jm)){return}bD.gn.mw(player)`,
-        `if(!ap.jX.jl(player,jm)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(bR.fN[0],j4)}bD.gn.mw(player)`
+        `if(!ap.jX.jl(player,jm)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(bR.fN[0],j4,bi.kj())}bD.gn.mw(player)`
     )
 }
