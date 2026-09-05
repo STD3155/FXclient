@@ -1024,7 +1024,8 @@ function n0() {
 				maxDepth: fxIsCorrectionTick || 600 <= fxTick ? 1 : __fx.autoExpand.openingFrontierDepth,
 				maxNeutralTiles: __fx.autoExpand.openingFrontierTileLimit,
 				ownerSearchDepth: fxTick < 600 ? 6 : 2
-			}), fxBorder = fxAnalysis.neutralLayerSizes, fxCompetitorNearby = !1, fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; 0 <= fxOwnerIndex; fxOwnerIndex--) {
+			}), fxBorder = fxAnalysis.neutralLayerSizes, fxDirections = ae.hU(fxPlayer, aE.fO), fxCanAttackBots = 0 === fxBorder[0] && 0 === fxDirections, fxCompetitorNearby = !1, fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; 0 <=
+			fxOwnerIndex; fxOwnerIndex--) {
 			var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
 			if (fxOwner < aE.fO && fxOwner !== fxPlayer && bD.gn.hd(fxOwner) && bD.gn.lQ(fxPlayer, fxOwner)) {
 				fxCompetitorNearby = !0;
@@ -1032,7 +1033,7 @@ function n0() {
 			}
 		}
 		var fxBotCandidates = [];
-		if (fxIsCorrectionTick)
+		if (fxIsCorrectionTick && fxCanAttackBots)
 			for (var fxBotIndex = fxAnalysis.adjacentOwners.length - 1; 0 <= fxBotIndex; fxBotIndex--) {
 				var fxBotTarget = fxAnalysis.adjacentOwners[fxBotIndex];
 				fxBotTarget >= aE.km && fxBotTarget < aE.fO && bD.gn.hd(fxBotTarget) && bD.gn.lQ(fxPlayer, fxBotTarget) && fxBotCandidates.push({
@@ -1042,24 +1043,23 @@ function n0() {
 					existingAttack: ae.hU(fxPlayer, fxBotTarget)
 				})
 			}
-		var fxProjectedBalance, fxDirections = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer],
+		var fxProjectedBalance, fxCanAttackBots = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer],
 			fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 === aE.data.tIncomeType ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer],
 			fxAutoExpand = null,
 			fxAutoExpandTarget = aE.fO,
-			fxAttackPercentage = aS.hv(),
-			fxExistingNeutralAttack = ae.hU(fxPlayer, aE.fO);
-		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxExistingNeutralAttack ? fxAutoExpand = fxTick < 600 ? __fx.autoExpand.planOpening(fxTick, fxBalance, fxBorder, fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
+			fxAttackPercentage = aS.hv();
+		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxDirections ? fxAutoExpand = fxTick < 600 ? __fx.autoExpand.planOpening(fxTick, fxBalance, fxBorder, fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
 			territory: fxTerritory,
-			armyIncomeScale: fxDirections,
+			armyIncomeScale: fxCanAttackBots,
 			territorialIncomeScale: fxTerritorialIncomeScale,
 			interestScale: 0 === aE.data.iIncomeType ? 64 : 1 === aE.data.iIncomeType ? aE.data.iIncomeValue : aE.data.iIncomeData[fxPlayer],
 			mapTerritory: aE.kW,
 			maxPlayers: aE.fO,
 			commandDelayTicks: aE.l6 ? 0 : 10
-		}) : (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxDirections, fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance,
+		}) : (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots, fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance,
 			fxBorder[0], aE.fO, fxAttackPercentage, aE.gl)) : fxIsCorrectionTick && (600 <= fxTick || !fxBorder[0]) && (fxProjectedBalance = 0 < fxBorder[0] ? __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick,
-			fxDirections, fxTerritorialIncomeScale) : 0, fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, fxBotCandidates,
-			aE.gl, fxExistingNeutralAttack)) ? aE.fO : fxAutoExpand.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
+			fxCanAttackBots, fxTerritorialIncomeScale) : 0, fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage,
+			fxBotCandidates, aE.gl, fxDirections)) ? aE.fO : fxAutoExpand.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
 	}
 	af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
 		.ed(), bi.ed()
