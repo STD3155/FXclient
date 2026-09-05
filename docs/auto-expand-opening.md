@@ -60,6 +60,17 @@ Eigene Einkommenseinstellungen fließen in die Berechnung ein. Die Suche gilt
 für die Eröffnung bis Tick 599; anschließend greifen die bestehenden Regeln
 für dichteabhängige Expansion und bezahlbare Botangriffe.
 
+Die Freigabe von Botangriffen hängt dabei von der tatsächlichen Grenze ab,
+nicht vom Ablauf der 33,6 Sekunden: Solange direkt erreichbares freies Land
+vorhanden ist oder noch ein neutraler Angriff läuft, spart Autoexpand für die
+neutrale Expansion. Auch ein momentan zu kleiner Slider oder das bewusste
+Warten auf Einkommen löst keinen Botangriff als Ersatz aus. Erst wenn die
+neutrale Grenze ausgeschöpft und die neutrale Armee zurückgekehrt ist, werden
+bezahlbare Botangriffe freigegeben. Erschließt eine Boteroberung neues freies
+Land, erhält dieses wieder Vorrang. Unerreichbares freies Land anderswo auf
+der Karte verhindert die Botfreigabe nicht. Manuelle Gegnerangriffe bleiben
+möglich; diese Priorität betrifft die automatischen Aktionen.
+
 ## Verbindlicher Cooldown
 
 Alle automatischen Angriffe teilen sich mindestens 50 Spielticks Pause, bei

@@ -56,6 +56,8 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                 ownerSearchDepth: fxTick < 600 ? 6 : 2
             });
             var fxNeutralLayerSizes = fxAnalysis.neutralLayerSizes;
+            var fxExistingNeutralAttack = ae.hU(fxPlayer, aE.fO);
+            var fxCanAttackBots = fxNeutralLayerSizes[0] === 0 && fxExistingNeutralAttack === 0;
             var fxCompetitorNearby = false;
             for (var fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; fxOwnerIndex >= 0; fxOwnerIndex--) {
                 var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
@@ -66,7 +68,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                 }
             }
             var fxBotCandidates = [];
-            if (fxIsCorrectionTick) {
+            if (fxIsCorrectionTick && fxCanAttackBots) {
                 for (var fxBotIndex = fxAnalysis.adjacentOwners.length - 1; fxBotIndex >= 0; fxBotIndex--) {
                     var fxBotTarget = fxAnalysis.adjacentOwners[fxBotIndex];
                     if (fxBotTarget >= aE.km && fxBotTarget < aE.fO && bD.gn.hd(fxBotTarget)
@@ -87,7 +89,6 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
             var fxAutoExpand = null;
             var fxAutoExpandTarget = aE.fO;
             var fxAttackPercentage = aS.hv();
-            var fxExistingNeutralAttack = ae.hU(fxPlayer, aE.fO);
             if (!fxIsCorrectionTick && fxNeutralLayerSizes[0] > 0 && fxExistingNeutralAttack === 0) {
                 if (fxTick < 600) {
                     fxAutoExpand = __fx.autoExpand.planOpening(

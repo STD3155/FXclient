@@ -396,6 +396,11 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
         return schedule(tick, "correction", targetedNeutralAttack, neutralTarget);
       }
 
+      // Waiting for income or a larger slider budget is part of neutral
+      // expansion, even after the timed opening. Keep those savings and the
+      // next cooldown available until the neutral front and attack are gone.
+      if (neutralFrontierTiles !== 0 || existingNeutralAttack !== 0) return null;
+
       const botAttack = findAutoExpandBotAttack(balance, normalPercentage, botCandidates);
       return schedule(tick, "correction", botAttack, botAttack?.target ?? null);
     },

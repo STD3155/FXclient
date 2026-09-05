@@ -167,12 +167,42 @@ test("prioritizes an actionable neutral correction over a conquerable bot", () =
   assert.equal(attack.target, 512);
 });
 
-test("falls back to a conquerable bot when neutral expansion is not actionable", () => {
+test("saves for neutral expansion when the slider cannot yet fund the frontier", () => {
   const controller = createAutoExpandController();
   const candidates = [{ id: 8, balance: 100, territory: 20, existingAttack: 0 }];
   const attack = controller.planCorrection(3, 10_000, 100, 100, 200, 512, 30, candidates, 2);
-  assert.notEqual(attack, null);
+  assert.equal(attack, null);
+  assert.equal(controller.getStatus().pending, false);
+  assert.equal(controller.canPlan(3), true);
+});
+
+test("an idle neutral frontier protects the bank even after the timed opening ends", () => {
+  const controller = createAutoExpandController();
+  const candidates = [{ id: 8, balance: 0, territory: 10, existingAttack: 0 }];
+  for (const tick of [593, 603, 1003]) {
+    assert.equal(controller.planCorrection(tick, 5_000, 100, 70, 10, 512, 511, candidates), null);
+    assert.equal(controller.getStatus().remainingTicks, 0);
+  }
+  // Saving must not consume the cooldown needed by the next neutral send.
+  assert.notEqual(controller.planProactive(1010, 9_900, 100, 10_100, 10, 512, 511), null);
+});
+
+test("bot attacks wait for neutral troops to finish even when no neutral border remains", () => {
+  const controller = createAutoExpandController();
+  const candidates = [{ id: 8, balance: 0, territory: 10, existingAttack: 0 }];
+  assert.equal(controller.planCorrection(603, 5_000, 100, 0, 0, 512, 511, candidates, 2, 200), null);
+  const attack = controller.planCorrection(613, 5_000, 100, 0, 0, 512, 511, candidates, 2, 0);
   assert.equal(attack.target, 8);
+  assert.equal(attack.isSafe, true);
+});
+
+test("free land reopened by a bot conquest pauses subsequent bot attacks", () => {
+  const controller = createAutoExpandController();
+  const candidates = [{ id: 8, balance: 0, territory: 10, existingAttack: 0 }];
+  const bot = controller.planCorrection(603, 5_000, 100, 0, 0, 512, 511, candidates);
+  controller.acknowledge(8, bot.encoded, 603);
+  assert.equal(controller.planCorrection(653, 5_000, 100, 70, 10, 512, 511, candidates), null);
+  assert.equal(controller.canPlan(653), true);
 });
 
 test("an urgent growth correction cannot bypass the cooldown", () => {

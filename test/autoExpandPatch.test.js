@@ -60,6 +60,45 @@ test("late corrections receive active neutral troops so they cannot duplicate ex
   hook.runInNewContext(context);
 });
 
+function addAdjacentBot(context) {
+  const sent = [];
+  context.ad.fT = [1, -1];
+  context.ad.h1 = cell => cell === -1;
+  context.ad.fJ = () => 8;
+  context.ah.hT[8] = 0;
+  context.ah.hF[8] = 10;
+  context.bB = { pg: { hy: (player, encoded, target) => sent.push({ player, encoded, target }) } };
+  context.b1 = { pm: { pq: (encoded, target) => sent.push({ encoded, target }) } };
+  return { sent };
+}
+
+test("game hook keeps neutral savings intact with a cheap adjacent bot after tick 600", () => {
+  for (const tick of [593, 603, 1003]) {
+    const context = gameContext(tick);
+    const { sent } = addAdjacentBot(context);
+    hook.runInNewContext(context);
+    assert.deepEqual(sent, []);
+    assert.equal(context.__fx.autoExpand.canPlan(tick), true);
+  }
+});
+
+test("game hook sends to a bot only after the neutral front and its attack are gone", () => {
+  for (const singleplayer of [true, false]) {
+    const context = gameContext(603);
+    context.aE.l6 = singleplayer;
+    context.ad.fI = () => false;
+    const { sent } = addAdjacentBot(context);
+    let activeNeutral = 200;
+    context.ae.hU = (_, target) => target === 512 ? activeNeutral : 0;
+    hook.runInNewContext(context);
+    assert.deepEqual(sent, []);
+    activeNeutral = 0;
+    hook.runInNewContext(context);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].target, 8);
+  }
+});
+
 test("each live game enables ECO with a fresh opening, while replays leave it disabled", () => {
   let startGame;
   generalPatches({
