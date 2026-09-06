@@ -1010,22 +1010,23 @@ function my() {
 }
 
 function n0() {
-	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && __fx.autoExpand.update(bi.kj(), bi.aCo), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && __fx.autoExpand.canPlan(bi.kj()) && (600 <= bi.kj() ||
-			bi.kj() % 10 == 3 || __fx.autoExpand.shouldPlanOpening(bi.kj())) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3)) {
-		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxBorder = ah.h7[fxPlayer], fxDirections = ad.fT, fxAnalysis = __fx.autoExpand.analyzeFrontier({
-				border: fxBorder,
-				directions: fxDirections,
-				isNeutral: function(fxCell) {
-					return ad.fI(fxCell)
-				},
-				getOwner: function(fxCell) {
-					return ad.h1(fxCell) ? ad.fJ(fxCell) : null
-				},
-				maxDepth: fxIsCorrectionTick || 600 <= fxTick ? 1 : __fx.autoExpand.openingFrontierDepth,
-				maxNeutralTiles: __fx.autoExpand.openingFrontierTileLimit,
-				ownerSearchDepth: fxTick < 600 ? 6 : 2
-			}), fxBorder = fxAnalysis.neutralLayerSizes, fxDirections = ae.hU(fxPlayer, aE.fO), fxCanAttackBots = 0 === fxBorder[0] && 0 === fxDirections, fxCompetitorNearby = !1, fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; 0 <=
-			fxOwnerIndex; fxOwnerIndex--) {
+	if (b2.ed(), aH.ed(), ao.ed(), __fx.economicAttack.isArmed() && __fx.autoExpand.update(bi.kj(), bi.aCo), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && __fx.autoExpand.canPlan(bi.kj()) && (bi.kj() >= __fx
+			.autoExpand.openingEndTick || bi.kj() % 10 == 0 && __fx.autoExpand.shouldPlanOpening(bi.kj())) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3)) {
+		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxOpeningFinished = fxTick >= __fx.autoExpand.openingEndTick, fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxBorder = ah.h7[fxPlayer],
+				fxDirections = ad.fT, fxAnalysis = __fx.autoExpand.analyzeFrontier({
+					border: fxBorder,
+					directions: fxDirections,
+					isNeutral: function(fxCell) {
+						return ad.fI(fxCell)
+					},
+					getOwner: function(fxCell) {
+						return ad.h1(fxCell) ? ad.fJ(fxCell) : null
+					},
+					maxDepth: fxOpeningFinished ? 1 : __fx.autoExpand.openingFrontierDepth,
+					maxNeutralTiles: __fx.autoExpand.openingFrontierTileLimit,
+					ownerSearchDepth: fxOpeningFinished ? 2 : 6
+				}), fxBorder = fxAnalysis.neutralLayerSizes, fxDirections = ae.hU(fxPlayer, aE.fO), fxCanAttackBots = fxOpeningFinished && 0 === fxBorder[0] && 0 === fxDirections, fxCompetitorNearby = !1, fxOwnerIndex = fxAnalysis.nearbyOwners
+				.length - 1; 0 <= fxOwnerIndex; fxOwnerIndex--) {
 			var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
 			if (fxOwner < aE.fO && fxOwner !== fxPlayer && bD.gn.hd(fxOwner) && bD.gn.lQ(fxPlayer, fxOwner)) {
 				fxCompetitorNearby = !0;
@@ -1048,18 +1049,19 @@ function n0() {
 			fxAutoExpand = null,
 			fxAutoExpandTarget = aE.fO,
 			fxAttackPercentage = aS.hv();
-		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxDirections ? fxAutoExpand = fxTick < 600 ? __fx.autoExpand.planOpening(fxTick, fxBalance, fxBorder, fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
-			territory: fxTerritory,
-			armyIncomeScale: fxCanAttackBots,
-			territorialIncomeScale: fxTerritorialIncomeScale,
-			interestScale: 0 === aE.data.iIncomeType ? 64 : 1 === aE.data.iIncomeType ? aE.data.iIncomeValue : aE.data.iIncomeData[fxPlayer],
-			mapTerritory: aE.kW,
-			maxPlayers: aE.fO,
-			commandDelayTicks: aE.l6 ? 0 : 10
-		}) : (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots, fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance,
-			fxBorder[0], aE.fO, fxAttackPercentage, aE.gl)) : fxIsCorrectionTick && (600 <= fxTick || !fxBorder[0]) && (fxProjectedBalance = 0 < fxBorder[0] ? __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick,
-			fxCanAttackBots, fxTerritorialIncomeScale) : 0, fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage,
-			fxBotCandidates, aE.gl, fxDirections)) ? aE.fO : fxAutoExpand.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
+		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxDirections ? fxAutoExpand = fxOpeningFinished ? (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots,
+			fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, aE.gl)) : __fx.autoExpand.planOpening(fxTick, fxBalance, fxBorder,
+			fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
+				territory: fxTerritory,
+				armyIncomeScale: fxCanAttackBots,
+				territorialIncomeScale: fxTerritorialIncomeScale,
+				interestScale: 0 === aE.data.iIncomeType ? 64 : 1 === aE.data.iIncomeType ? aE.data.iIncomeValue : aE.data.iIncomeData[fxPlayer],
+				mapTerritory: aE.kW,
+				maxPlayers: aE.fO,
+				commandDelayTicks: aE.l6 ? 0 : 10
+			}) : fxIsCorrectionTick && fxOpeningFinished && (fxProjectedBalance = 0 < fxBorder[0] ? __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots, fxTerritorialIncomeScale) : 0,
+			fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, fxBotCandidates, aE.gl, fxDirections)) ? aE.fO : fxAutoExpand
+			.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
 	}
 	af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
 		.ed(), bi.ed()
