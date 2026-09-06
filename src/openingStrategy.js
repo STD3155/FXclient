@@ -6,6 +6,7 @@ export const OPENING_FRONTIER_TILE_LIMIT = 32_768;
 const CYCLE_TICKS = 100;
 const ATTACK_PARTS = 1024;
 const ATTACK_FEE_PARTS = 12;
+const OPENING_ATTACK_PERCENTAGE = ATTACK_PARTS / 2 - 1;
 
 function expansionInterval(territory) {
   return territory < 1_000 ? 4 : territory < 10_000 ? 3 : territory < 60_000 ? 2 : 1;
@@ -75,7 +76,7 @@ export function calculateOpeningExpandAttack(
   balance,
   tick,
   neutralLayerSizes,
-  normalPercentage,
+  _normalPercentage, // Kept for call compatibility; the opening controls its own budget.
   competitorNearby = false,
   expansionCost = 2,
   options = {}
@@ -91,7 +92,7 @@ export function calculateOpeningExpandAttack(
     lastAttackTick: -AUTO_ATTACK_COOLDOWN_TICKS,
     ...options
   };
-  if (![balance, tick, normalPercentage, expansionCost, ...Object.values(economy)].every(Number.isFinite)
+  if (![balance, tick, expansionCost, ...Object.values(economy)].every(Number.isFinite)
     || !Array.isArray(neutralLayerSizes) || neutralLayerSizes.some(size => !Number.isFinite(size) || size < 0)
     || economy.territory <= 0 || economy.mapTerritory <= 0 || economy.maxPlayers <= 4
     || economy.armyIncomeScale < 0 || economy.territorialIncomeScale < 0 || economy.interestScale < 0
@@ -102,8 +103,8 @@ export function calculateOpeningExpandAttack(
   const layers = neutralLayerSizes.slice(0, OPENING_FRONTIER_DEPTH).map(Math.floor);
   if (!layers[0]) return null;
   economy.baseRates = new Map();
-  // Keep at least half of the bank before the fee, even with a high slider.
-  const percentage = Math.max(0, Math.min(511, Math.floor(normalPercentage)));
+  // Optimize the opening independently of the user's attack limit. Each send
+  // still leaves at least half of the bank before the additional fee.
   const initial = { balance, territory: Math.floor(economy.territory), offset: 0, lastAttackTick: economy.lastAttackTick, first: null };
   let states = [initial];
   const landValue = expansionCost + (competitorNearby ? 1 : 0);
@@ -130,7 +131,7 @@ export function calculateOpeningExpandAttack(
       for (let start = earliest; start < end; start += 10) {
         const before = advance(state, from, start - 1, layers, economy, expansionCost);
         const budget = Math.min(
-          Math.floor(before.balance * (percentage + 1) / ATTACK_PARTS),
+          Math.floor(before.balance * (OPENING_ATTACK_PERCENTAGE + 1) / ATTACK_PARTS),
           before.balance - Math.floor(ATTACK_FEE_PARTS * before.balance / ATTACK_PARTS)
         );
         let tiles = 0;
@@ -141,7 +142,7 @@ export function calculateOpeningExpandAttack(
           minimumAmount = Math.max(minimumAmount, expansionCost * tiles + (expansionCost + 1) * layers[offset]);
           const encoded = Math.ceil(minimumAmount * ATTACK_PARTS / before.balance) - 1;
           const amount = Math.floor(before.balance * (encoded + 1) / ATTACK_PARTS);
-          if (encoded > percentage || amount > budget) break;
+          if (encoded > OPENING_ATTACK_PERCENTAGE || amount > budget) break;
           tiles += layers[offset];
           returnTick += expansionInterval(territory);
           territory += layers[offset];

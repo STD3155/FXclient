@@ -16,13 +16,14 @@ Modellannahmen, nicht als Beweis für eine universell optimale Eröffnung.
 
 ## Ausgangslage erfassen
 
-Verwende den aktuellen Spieltick, Truppenbestand, eigenes Gebiet, den eingestellten
-Sendeanteil, Einkommensregeln und laufende Angriffe. Erfasse die erreichbaren
+Verwende den aktuellen Spieltick, Truppenbestand, eigenes Gebiet,
+Einkommensregeln und laufende Angriffe. Die Eröffnung berechnet ihren Sendeanteil
+unabhängig von der Limit-Einstellung des Sliders. Erfasse die erreichbaren
 neutralen Felder in aufeinanderfolgenden Grenzschichten. Prüfe, ob feindliche
 Spieler oder Bots innerhalb von sechs neutralen Schichten liegen.
 
 Fehlen diese Angaben, kennzeichne eine Beispielrechnung als Annahme. Verwende
-dafür 512 Starttruppen, zwölf Startfelder, einen 50-%-Slider, Standardeinkommen
+dafür 512 Starttruppen, zwölf Startfelder, Standardeinkommen
 und eine offene Karte ohne Gegner. Gib eine solche Rechnung nicht als Analyse
 einer unbekannten laufenden Partie aus.
 
@@ -67,8 +68,9 @@ Eroberung ausgezahlt.
    je Frontfeld über deren Eroberungskosten verfügbar sein. Bei Kosten `c` und
    Schichtgrößen `n₁ … nₖ` ist der notwendige Anfangsbetrag das Maximum aller
    Werte `c × Summe der vorherigen Schichtgrößen + (c + 1) × aktuelle Schichtgröße`.
-4. Begrenze die entsandte Armee auf den kleineren Wert aus Slider und 50 % des
-   Bestands vor Gebühr. Prüfe bei einer Umsetzung die tatsächlich übertragene
+4. Begrenze die entsandte Armee auf 50 % des Bestands vor Gebühr, unabhängig
+   von der Limit-Einstellung des Sliders. Auch eine Änderung des Limits darf
+   die Eröffnungsplanung nicht beeinflussen. Prüfe die tatsächlich übertragene
    Truppenmenge nach Rundung; sie muss sowohl die Mindestmenge als auch das
    Budget einhalten. Reicht das Budget nicht für die erste Schicht, warte.
 5. Plane Anlaufzeit, sämtliche Eroberungsschritte und die Rückkehr der Restarmee
@@ -108,6 +110,8 @@ Eroberung ausgezahlt.
   verbleibende Zeit am ECO-Knopf an.
 - Beende die Eröffnungsplanung ab Tick 600. Danach gelten die gesonderten Regeln
   für dichteabhängige Expansion und bezahlbare Botangriffe, mit demselben Cooldown.
+  Diese Aktionen sowie manuelle Gegnerangriffe berücksichtigen weiterhin das
+  Slider-Limit. Die Eröffnung verändert diese Einstellung nicht.
 - Gib automatische Botangriffe erst frei, wenn kein direkt erreichbares freies
   Land und kein laufender neutraler Angriff mehr vorhanden sind. Diese Priorität
   bleibt auch nach Tick 600 bestehen: Ein zu kleines Truppenbudget oder das
@@ -119,7 +123,7 @@ Eroberung ausgezahlt.
 ## Referenz zur Plausibilitätsprüfung
 
 Auf einer offenen Karte ohne Gegner, mit 512 Starttruppen, zwölf Feldern,
-50-%-Slider und Standardeinkommen ergibt die Berechnung folgende Folge:
+beliebigem Slider-Limit und Standardeinkommen ergibt die Berechnung folgende Folge:
 
 | Spielzeit | Sendeanteil | Entsandte Truppen |
 | --- | ---: | ---: |

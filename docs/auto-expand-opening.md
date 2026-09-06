@@ -6,6 +6,9 @@ Felder möglichst schon bei der nächsten Gebietseinnahme mitbezahlt werden.
 Bei jedem neuen Spiel wird sie automatisch über ECO aktiviert. Über den
 ECO-Knopf lässt sie sich für das laufende Spiel ausschalten; das nächste Spiel
 startet wieder mit aktiver Eröffnungsstrategie. Replays aktivieren ECO nicht.
+Die Limit-Einstellung des Angriffssliders beeinflusst die Eröffnung nicht:
+Bei gleicher Spielsituation bleiben Zeitpunkt und Truppenmenge gleich, auch
+wenn das Limit während der Eröffnung geändert wird.
 
 ## Quellen und überprüfte Mechanik
 
@@ -40,7 +43,8 @@ dieses Modells, kein Beweis für eine allgemein optimale Multiplayer-Strategie.
 Die Bedingungen der Suche sind:
 
 - Maximal ein Eröffnungsangriff je Gebietseinnahmezyklus und höchstens 50 % des
-  Bestands vor der zusätzlichen Gebühr. Ein niedrigerer Slider bleibt bindend.
+  Bestands vor der zusätzlichen Gebühr. Diese eigene Budgetgrenze gilt
+  unabhängig vom eingestellten Slider-Limit.
 - Der Angriff einschließlich Rückkehr der Resttruppen muss im betrachteten
   Gebietseinnahmezyklus enden. Laufende neutrale Angriffe werden nicht verstärkt.
 - Vorschau auf höchstens 48 vollständige neutrale Schichten. Die Suche stoppt
@@ -58,13 +62,15 @@ Die Bedingungen der Suche sind:
 
 Eigene Einkommenseinstellungen fließen in die Berechnung ein. Die Suche gilt
 für die Eröffnung bis Tick 599; anschließend greifen die bestehenden Regeln
-für dichteabhängige Expansion und bezahlbare Botangriffe.
+für dichteabhängige Expansion und bezahlbare Botangriffe. Bei diesen Aktionen
+und manuellen Gegnerangriffen bleibt das Slider-Limit bindend; die Eröffnung
+verändert die Einstellung nicht.
 
 Die Freigabe von Botangriffen hängt dabei von der tatsächlichen Grenze ab,
 nicht vom Ablauf der 33,6 Sekunden: Solange direkt erreichbares freies Land
 vorhanden ist oder noch ein neutraler Angriff läuft, spart Autoexpand für die
-neutrale Expansion. Auch ein momentan zu kleiner Slider oder das bewusste
-Warten auf Einkommen löst keinen Botangriff als Ersatz aus. Erst wenn die
+neutrale Expansion. Auch ein nach der Eröffnung zu kleiner Slider oder das
+bewusste Warten auf Einkommen löst keinen Botangriff als Ersatz aus. Erst wenn die
 neutrale Grenze ausgeschöpft und die neutrale Armee zurückgekehrt ist, werden
 bezahlbare Botangriffe freigegeben. Erschließt eine Boteroberung neues freies
 Land, erhält dieses wieder Vorrang. Unerreichbares freies Land anderswo auf
@@ -84,10 +90,17 @@ ein Umschalten setzt den Cooldown nicht zurück.
 ## Reproduzierbarer Modellvergleich
 
 Ausführen mit `node scripts/benchmarkAutoExpand.js`. Der unabhängige Simulator
-startet mit 512 Truppen auf zwölf Feldern, 50-%-Slider und Standardeinkommen.
+startet mit 512 Truppen auf zwölf Feldern und Standardeinkommen. Die vorherige
+Strategie verwendet einen 50-%-Slider; die berechnete Eröffnung ist vom Limit
+unabhängig.
 Er vergleicht die vorherige Eröffnung mit der neuen Controller-Logik einschließlich
 Warten, Bestätigungen und Neuplanung. Gegner und Netzwerklatenz sind nicht Teil
 dieser Messung.
+
+Die Regressionstests vergleichen vollständige Angriffsfolgen, Truppen und
+Gebiet bei minimalem, niedrigem, hohem und wechselndem Slider-Limit. Sie prüfen
+offenes und begrenztes Land sowie Gegnernähe. Der Spiel-Hook wird außerdem für
+Singleplayer und Multiplayer sowie den Übergang ab Tick 600 geprüft.
 
 Ergebnis nach 600 Ticks:
 

@@ -11,6 +11,7 @@ export function simulateOpening({ legacy = false, layers = Array.from({ length: 
   const snapshots = [];
   const started = performance.now();
   for (let tick = 0; tick < 600; tick++) {
+    const selectedPercentage = typeof percentage === "function" ? percentage(tick) : percentage;
     const rate = () => {
       let rate = Math.floor(700 - 5 * tick / 16);
       if (balance > 100 * territory) rate -= Math.floor(2 * rate * (balance - 100 * territory) / (100 * territory));
@@ -21,7 +22,7 @@ export function simulateOpening({ legacy = false, layers = Array.from({ length: 
     if (legacy) {
       if (tick % 10 === 0 && army === 0 && tick - lastAttackTick >= 20) {
         let tiles = 0, required = 0, amount = 0;
-        const budget = Math.floor(balance * (percentage + 1) / 1024);
+        const budget = Math.floor(balance * (selectedPercentage + 1) / 1024);
         const depth = tick < 100 ? 5 : tick < 300 ? 4 : 3;
         for (const size of layers.slice(offset, offset + depth)) {
           required = Math.max(required, 2 * tiles + 3 * size);
@@ -32,10 +33,10 @@ export function simulateOpening({ legacy = false, layers = Array.from({ length: 
         if (amount > 0) attack = { encoded: Math.ceil(amount * 1024 / balance) - 1 };
       } else if (tick % 10 === 3 && layers[offset]) {
         const income = Math.max(1, Math.floor(balance * rate() / 10_000)) + (tick % 100 >= 90 ? territory : 0);
-        attack = calculateAutoExpandAttack(balance, territory, income, percentage, layers[offset]);
+        attack = calculateAutoExpandAttack(balance, territory, income, selectedPercentage, layers[offset]);
       }
     } else if (tick % 10 === 0 && army === 0) {
-      attack = controller.planOpening(tick, balance, layers.slice(offset, offset + 48), percentage, competitorNearby, 512, 2, { territory });
+      attack = controller.planOpening(tick, balance, layers.slice(offset, offset + 48), selectedPercentage, competitorNearby, 512, 2, { territory });
     }
     if (attack) {
       const amount = Math.floor(balance * (attack.encoded + 1) / 1024);

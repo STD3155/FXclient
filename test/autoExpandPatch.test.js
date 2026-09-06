@@ -33,6 +33,52 @@ test("game hook passes real territory and custom incomes into the opening planne
     interestScale: 32, mapTerritory: 1_000_000, maxPlayers: 512, commandDelayTicks: 0 });
 });
 
+test("standard opening sends bypass the selected limit in singleplayer and multiplayer", () => {
+  for (const singleplayer of [true, false]) {
+    let expected;
+    for (const percentage of [0, 1, 51, 127, 255, 511, 1023]) {
+      // Multiplayer plans earlier to include its command-delivery allowance.
+      const context = gameContext(singleplayer ? 80 : 70);
+      context.aE.l6 = singleplayer;
+      context.aE.data = { aIncomeType: 0, tIncomeType: 0, iIncomeType: 0 };
+      context.aS.hv = () => percentage;
+      context.ah.hT[0] = singleplayer ? 864 : 810;
+      context.__fx.autoExpand.analyzeFrontier = () => ({
+        neutralLayerSizes: Array.from({ length: 48 }, (_, i) => 16 + 4 * i),
+        adjacentOwners: [], nearbyOwners: []
+      });
+      const { sent } = addAdjacentBot(context);
+      hook.runInNewContext(context);
+      assert.equal(sent.length, 1);
+      assert.equal(sent[0].target, 512);
+      assert.ok(sent[0].encoded > 0 && sent[0].encoded <= 511);
+      if (expected) assert.deepEqual(sent, expected);
+      else expected = sent;
+      assert.equal(context.aS.hv(), percentage);
+      assert.equal(context.__fx.autoExpand.getStatus().pending, true);
+    }
+  }
+});
+
+test("the selected limit still controls expansion after the opening", () => {
+  for (const tick of [600, 603]) {
+    for (const percentage of [0, 511]) {
+      const context = gameContext(tick);
+      context.aE.data = { aIncomeType: 0, tIncomeType: 0, iIncomeType: 0 };
+      context.aS.hv = () => percentage;
+      context.ah.hT[0] = 12_000;
+      context.ah.hF[0] = 100;
+      context.__fx.autoExpand.analyzeFrontier = () => ({
+        neutralLayerSizes: [16], adjacentOwners: [], nearbyOwners: []
+      });
+      const { sent } = addAdjacentBot(context);
+      hook.runInNewContext(context);
+      assert.equal(sent.length, percentage === 0 ? 0 : 1);
+      if (sent.length) assert.ok(sent[0].encoded <= percentage);
+    }
+  }
+});
+
 test("game hook cannot sneak a correction past an opening cooldown", () => {
   const context = gameContext(3);
   const controller = context.__fx.autoExpand;

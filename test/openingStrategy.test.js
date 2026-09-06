@@ -29,15 +29,30 @@ test("controller waits for the planned time and sends only once per opening cycl
   assert.equal(controller.shouldPlanOpening(0), true);
 });
 
-test("adapts to restricted land and to the slider instead of repeating a fixed opening", () => {
+test("adapts to restricted land while retaining the opening reserve and cooldown", () => {
   const open = simulateOpening();
   const restricted = simulateOpening({ layers: layers.slice(0, 5) });
-  const limited = simulateOpening({ percentage: 127 });
   assert.ok(open.territory > restricted.territory);
   assert.equal(restricted.territory, 132);
-  assert.ok(limited.attacks.every(attack => attack.percentage <= 12.5));
   assert.ok(open.attacks.every(attack => attack.percentage <= 50));
+  assert.ok(open.attacks.every(attack => attack.amount + attack.fee < attack.balance));
   for (let i = 1; i < open.attacks.length; i++) assert.ok(open.attacks[i].tick - open.attacks[i - 1].tick >= 50);
+});
+
+test("the complete standard opening is independent of low, high and changing attack limits", () => {
+  for (const scenario of [{}, { layers: layers.slice(0, 5) }, { layers: layers.slice(0, 20), competitorNearby: true }]) {
+    const { durationMs: _, ...expected } = simulateOpening(scenario);
+    for (const percentage of [0, 1, 51, 127, 255, 511, 1023, tick => tick % 20 === 0 ? 0 : 1023]) {
+      const { durationMs: _, ...actual } = simulateOpening({ ...scenario, percentage });
+      assert.deepEqual(actual, expected);
+    }
+  }
+});
+
+test("an absent slider value cannot disable opening planning", () => {
+  const expected = calculateOpeningExpandAttack(512, 0, layers, 511);
+  assert.deepEqual(calculateOpeningExpandAttack(512, 0, layers), expected);
+  assert.deepEqual(calculateOpeningExpandAttack(512, 0, layers, NaN), expected);
 });
 
 test("reference simulation confirms more land and troops than the previous opening", () => {
@@ -76,7 +91,7 @@ test("accounts for custom incomes and leaves time for multiplayer command delive
 test("rejects invalid or unaffordable openings and stops at tick 600", () => {
   for (const values of [
     [0, 0, layers, 511], [512, 600, layers, 511], [512, 0, [], 511],
-    [512, 0, [NaN], 511], [512, 0, layers, NaN], [512, -1, layers, 511],
-    [512, 0, layers, 0], [512, 0, layers, 511, false, 2, { territory: 0 }]
+    [512, 0, [NaN], 511], [512, -1, layers, 511], [1, 590, layers, 511],
+    [512, 0, layers, 511, false, 2, { territory: 0 }]
   ]) assert.equal(calculateOpeningExpandAttack(...values), null);
 });
