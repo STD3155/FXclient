@@ -109,13 +109,23 @@ Eroberung ausgezahlt.
 - Setze den Cooldown beim Aus- und Einschalten von ECO nicht zurück. Zeige die
   verbleibende Zeit am ECO-Knopf an.
 - Beende die Eröffnungsplanung ab Tick 600. Danach gelten die gesonderten Regeln
-  für dichteabhängige Expansion und bezahlbare Botangriffe, mit demselben Cooldown.
+  für dichteabhängige Expansion, günstiges freies Land und bezahlbare Botangriffe,
+  mit demselben Cooldown.
   Diese Aktionen sowie manuelle Gegnerangriffe berücksichtigen weiterhin das
   Slider-Limit. Die Eröffnung verändert diese Einstellung nicht.
-- Gib automatische Botangriffe erst frei, wenn kein direkt erreichbares freies
-  Land und kein laufender neutraler Angriff mehr vorhanden sind. Diese Priorität
-  bleibt auch nach Tick 600 bestehen: Ein zu kleines Truppenbudget oder das
-  Warten auf Einkommen ist kein Anlass, ersatzweise einen Bot anzugreifen.
+- Erobere nach der Eröffnung die vollständige angrenzende neutrale Grenzschicht
+  auch unterhalb der Dichtegrenze, wenn die tatsächlich gesendete Armee nach
+  Rundung einschließlich Angriffsgebühr höchstens 5 % des Bestands bindet.
+  Mindestens 95 % bleiben damit vor der Rückkehr der Restarmee verfügbar. Dies
+  ist eine zusätzliche Budgetheuristik; Dichtekorrekturen können größere
+  Angriffe auslösen. Prüfe die neue Grenze nach jedem Cooldown erneut und
+  verstärke keine noch laufende neutrale Armee.
+- Gib automatische Botangriffe frühestens nach Abschluss der Eröffnung bei
+  Tick 600 frei. Auch bei vorher ausgeschöpfter neutraler Grenze bleibt die
+  Botautomatik bis dahin gesperrt. Zusätzlich dürfen kein direkt erreichbares
+  freies Land und kein laufender neutraler Angriff mehr vorhanden sein.
+  Ein zu kleines Truppenbudget oder das Warten auf Einkommen ist kein Anlass,
+  ersatzweise einen Bot anzugreifen.
   Erschließt eine Boteroberung neues freies Land, gib diesem wieder Vorrang.
   Freies Land ohne Verbindung zur eigenen Grenze blockiert die Botfreigabe
   nicht. Lasse manuelle Gegnerangriffe weiterhin zu.

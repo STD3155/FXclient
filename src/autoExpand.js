@@ -1,6 +1,6 @@
 import { calculateEconomicAttack } from "./economicAttack.js";
 import {
-  calculateOpeningExpandAttack, AUTO_ATTACK_COOLDOWN_TICKS, OPENING_FRONTIER_DEPTH,
+  calculateOpeningExpandAttack, AUTO_ATTACK_COOLDOWN_TICKS, OPENING_END_TICK, OPENING_FRONTIER_DEPTH,
   OPENING_FRONTIER_TILE_LIMIT
 } from "./openingStrategy.js";
 export { calculateOpeningExpandAttack, AUTO_ATTACK_COOLDOWN_TICKS };
@@ -9,6 +9,7 @@ const OPTIMAL_GROWTH_DENSITY = 100;
 const SERVER_RESERVE_PARTS = 12;
 const ATTACK_PARTS = 1024;
 const DEFAULT_EXPANSION_COST = 2;
+const AFFORDABLE_EXPANSION_BUDGET_PERCENT = 5;
 export const AUTO_EXPAND_TRIGGER_TICK = 3;
 export const PROACTIVE_EXPAND_TRIGGER_TICK = 0;
 const PROACTIVE_HORIZON_CYCLES = 2;
@@ -222,6 +223,43 @@ export function calculateProactiveExpandAttack(
   };
 }
 
+export function calculateAffordableExpandAttack(
+  balance,
+  territory,
+  neutralFrontierTiles,
+  normalPercentage = ATTACK_PARTS - 1,
+  expansionCost = DEFAULT_EXPANSION_COST
+) {
+  if (![balance, territory, neutralFrontierTiles, normalPercentage, expansionCost].every(Number.isFinite)) return null;
+  balance = Math.floor(balance);
+  territory = Math.floor(territory);
+  neutralFrontierTiles = Math.floor(neutralFrontierTiles);
+  expansionCost = Math.max(0, Math.floor(expansionCost));
+  normalPercentage = Math.max(0, Math.min(ATTACK_PARTS - 1, Math.floor(normalPercentage)));
+  if (balance <= 0 || territory <= 0 || neutralFrontierTiles <= 0) return null;
+
+  const minimumAmount = (expansionCost + 1) * neutralFrontierTiles;
+  const encoded = Math.ceil(minimumAmount * ATTACK_PARTS / balance) - 1;
+  if (encoded < 0 || encoded > normalPercentage) return null;
+  const amount = Math.floor(balance * (encoded + 1) / ATTACK_PARTS);
+  const fee = Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
+  const commitmentLimit = Math.floor(balance * AFFORDABLE_EXPANSION_BUDGET_PERCENT / 100);
+  const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
+  // Count both the actual rounded send and the fee: at least 95% of the bank
+  // must remain available even before any surviving attackers return.
+  if (amount < minimumAmount || amount > percentageLimit || amount + fee > commitmentLimit) return null;
+
+  return {
+    encoded,
+    amount,
+    fee,
+    minimumAmount,
+    percentageLimit,
+    commitmentLimit,
+    expectedTerritoryGain: neutralFrontierTiles
+  };
+}
+
 export function findAutoExpandBotAttack(ownBalance, normalPercentage, candidates) {
   if (!Array.isArray(candidates)) return null;
 
@@ -271,7 +309,8 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       && (pendingAttack === null || Math.floor(tick / 10) - pendingAttack.cycle >= PENDING_TIMEOUT_CYCLES);
   }
   function shouldPlanOpening(tick) {
-    return canPlan(tick) && tick >= nextOpeningCheckTick && Math.floor(tick / 100) !== lastOpeningCycle;
+    return tick < OPENING_END_TICK && canPlan(tick)
+      && tick >= nextOpeningCheckTick && Math.floor(tick / 100) !== lastOpeningCycle;
   }
 
   function schedule(tick, phase, attack, target = null) {
@@ -332,7 +371,9 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
         neutralFrontierTiles,
         normalPercentage,
         expansionCost
-      );
+      ) ?? (tick >= OPENING_END_TICK
+        ? calculateAffordableExpandAttack(balance, territory, neutralFrontierTiles, normalPercentage, expansionCost)
+        : null);
       return schedule(tick, "proactive", attack, target);
     },
     planOpening(
@@ -361,7 +402,7 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
     planBot(tick, ownBalance, normalPercentage, candidates) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
-      if (positiveModulo(tick, 10) !== triggerTick) return null;
+      if (tick < OPENING_END_TICK || positiveModulo(tick, 10) !== triggerTick) return null;
       const attack = findAutoExpandBotAttack(ownBalance, normalPercentage, candidates);
       return schedule(tick, "correction", attack, attack?.target ?? null);
     },
@@ -379,7 +420,7 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
     ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
-      if (positiveModulo(tick, 10) !== triggerTick) return null;
+      if (tick < OPENING_END_TICK || positiveModulo(tick, 10) !== triggerTick) return null;
 
       const neutralAttack = neutralFrontierTiles > 0 && existingNeutralAttack === 0
         ? calculateAutoExpandAttack(
@@ -389,7 +430,7 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
           normalPercentage,
           neutralFrontierTiles,
           expansionCost
-        )
+        ) ?? calculateAffordableExpandAttack(balance, territory, neutralFrontierTiles, normalPercentage, expansionCost)
         : null;
       if (neutralAttack !== null) {
         const targetedNeutralAttack = { ...neutralAttack, target: neutralTarget };
@@ -450,9 +491,11 @@ export default {
   analyzeFrontier: analyzeExpansionFrontier,
   openingFrontierDepth: OPENING_FRONTIER_DEPTH,
   openingFrontierTileLimit: OPENING_FRONTIER_TILE_LIMIT,
+  openingEndTick: OPENING_END_TICK,
   cooldownTicks: AUTO_ATTACK_COOLDOWN_TICKS,
   calculate: calculateAutoExpandAttack,
   calculateProactive: calculateProactiveExpandAttack,
+  calculateAffordable: calculateAffordableExpandAttack,
   calculateOpening: calculateOpeningExpandAttack,
   calculateNextIncome,
   projectBalance,

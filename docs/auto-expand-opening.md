@@ -61,21 +61,45 @@ Die Bedingungen der Suche sind:
   und dem tatsächlichen Bestand neu gerechnet.
 
 Eigene Einkommenseinstellungen fließen in die Berechnung ein. Die Suche gilt
-für die Eröffnung bis Tick 599; anschließend greifen die bestehenden Regeln
-für dichteabhängige Expansion und bezahlbare Botangriffe. Bei diesen Aktionen
-und manuellen Gegnerangriffen bleibt das Slider-Limit bindend; die Eröffnung
-verändert die Einstellung nicht.
+für die Eröffnung bis Tick 599. Ab Tick 600 greifen dichteabhängige Expansion,
+die zusätzliche Regel für günstiges freies Land und bezahlbare Botangriffe.
+Bei diesen Aktionen und manuellen Gegnerangriffen bleibt das Slider-Limit
+bindend; die Eröffnung verändert die Einstellung nicht.
 
-Die Freigabe von Botangriffen hängt dabei von der tatsächlichen Grenze ab,
-nicht vom Ablauf der 33,6 Sekunden: Solange direkt erreichbares freies Land
-vorhanden ist oder noch ein neutraler Angriff läuft, spart Autoexpand für die
-neutrale Expansion. Auch ein nach der Eröffnung zu kleiner Slider oder das
-bewusste Warten auf Einkommen löst keinen Botangriff als Ersatz aus. Erst wenn die
-neutrale Grenze ausgeschöpft und die neutrale Armee zurückgekehrt ist, werden
-bezahlbare Botangriffe freigegeben. Erschließt eine Boteroberung neues freies
-Land, erhält dieses wieder Vorrang. Unerreichbares freies Land anderswo auf
-der Karte verhindert die Botfreigabe nicht. Manuelle Gegnerangriffe bleiben
-möglich; diese Priorität betrifft die automatischen Aktionen.
+## Günstiges freies Land nach der Eröffnung
+
+Autoexpand muss nach der Eröffnung nicht mehr auf die Dichtegrenze warten:
+Es erobert die direkt angrenzende neutrale Grenzschicht auch dann, wenn die
+dafür benötigte Armee einschließlich Angriffsgebühr höchstens 5 % des aktuellen
+Truppenbestands bindet. Diese zusätzliche Schwelle ist eine vorsichtige
+Budgetregel für günstige Expansion, kein berechnetes wirtschaftliches Optimum.
+
+Geprüft werden die tatsächlich gesendeten Truppen nach Rundung des Prozentsatzes
+und die zusätzliche Gebühr `floor(12 * Bestand / 1024)`. Mindestens 95 % des
+Bestands bleiben dadurch schon vor der Rückkehr der Restarmee verfügbar. Der
+Angriff muss die vollständige unmittelbare Grenzschicht finanzieren können und
+ins Slider-Limit passen. Bei 10.000 Truppen und 100 angrenzenden neutralen Feldern
+sind das unter Standardbedingungen 302 entsandte Truppen plus 117 Gebühr.
+
+Nach dem gemeinsamen Cooldown wird die neue Grenze erneut geprüft. Ein noch
+laufender neutraler Angriff wird nicht verstärkt. Die Eröffnungsplanung bleibt
+bis Tick 599 allein zuständig; die bestehenden Regeln gegen Dichteüberlauf
+gelten nach der Eröffnung zusätzlich und können größere Angriffe auslösen.
+
+## Freigabe automatischer Botangriffe
+
+Botangriffe beginnen frühestens nach dem Ende der Eröffnungssequenz bei Tick 600
+(33,6 Sekunden bei normaler Geschwindigkeit), auch wenn vorher bereits kein
+freies Land mehr erreichbar ist. Sowohl der Spiel-Hook als auch die
+Controller-Einstiege für Botangriffe und Korrekturen sperren frühere Aktionen.
+
+Zusätzlich müssen die neutrale Grenze ausgeschöpft und die neutrale Armee
+zurückgekehrt sein. Solange direkt erreichbares freies Land vorhanden ist oder
+noch ein neutraler Angriff läuft, hat neutrale Expansion Vorrang. Ein zu kleines
+Budget, das Slider-Limit oder das Warten auf Einkommen löst keinen Botangriff
+als Ersatz aus. Erschließt eine Boteroberung neues freies Land, erhält dieses
+wieder Vorrang. Unerreichbares freies Land anderswo auf der Karte verhindert
+die Botfreigabe nicht. Manuelle Gegnerangriffe bleiben möglich.
 
 ## Verbindlicher Cooldown
 
@@ -101,6 +125,9 @@ Die Regressionstests vergleichen vollständige Angriffsfolgen, Truppen und
 Gebiet bei minimalem, niedrigem, hohem und wechselndem Slider-Limit. Sie prüfen
 offenes und begrenztes Land sowie Gegnernähe. Der Spiel-Hook wird außerdem für
 Singleplayer und Multiplayer sowie den Übergang ab Tick 600 geprüft.
+Weitere Tests prüfen die 5-%-Schwelle einschließlich Gebühren und Rundung,
+günstige Expansion unterhalb der Dichtegrenze, den gemeinsamen Cooldown und
+die Bot-Sperre während der gesamten Eröffnung bei eingeschlossenem Start.
 
 Ergebnis nach 600 Ticks:
 

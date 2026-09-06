@@ -79,6 +79,37 @@ test("the selected limit still controls expansion after the opening", () => {
   }
 });
 
+test("game hook captures affordable free land below the density cap before considering bots", () => {
+  for (const singleplayer of [true, false]) {
+    for (const tick of [600, 603]) {
+      const context = gameContext(tick);
+      context.aE.l6 = singleplayer;
+      context.aE.data = { aIncomeType: 0, tIncomeType: 0, iIncomeType: 0 };
+      context.ah.hT[0] = 10_000;
+      context.ah.hF[0] = 1000;
+      const { sent } = addAdjacentBot(context);
+      hook.runInNewContext(context);
+      assert.equal(sent.length, 1);
+      assert.equal(sent[0].target, 512);
+      const amount = Math.floor(10_000 * (sent[0].encoded + 1) / 1024);
+      assert.ok(amount >= 3);
+      assert.ok(amount + Math.floor(12 * 10_000 / 1024) <= 500);
+    }
+  }
+});
+
+test("affordable expansion never reinforces an active neutral attack", () => {
+  for (const tick of [600, 603]) {
+    const context = gameContext(tick);
+    context.ah.hT[0] = 10_000;
+    context.ah.hF[0] = 1000;
+    context.ae.hU = (_, target) => target === 512 ? 50 : 0;
+    const { sent } = addAdjacentBot(context);
+    hook.runInNewContext(context);
+    assert.deepEqual(sent, []);
+  }
+});
+
 test("game hook cannot sneak a correction past an opening cooldown", () => {
   const context = gameContext(3);
   const controller = context.__fx.autoExpand;
@@ -121,10 +152,29 @@ function addAdjacentBot(context) {
 test("game hook keeps neutral savings intact with a cheap adjacent bot after tick 600", () => {
   for (const tick of [593, 603, 1003]) {
     const context = gameContext(tick);
+    context.ah.hT[0] = 50;
     const { sent } = addAdjacentBot(context);
     hook.runInNewContext(context);
     assert.deepEqual(sent, []);
     assert.equal(context.__fx.autoExpand.canPlan(tick), true);
+  }
+});
+
+test("game hook waits until the opening ends before attacking bots even on an enclosed spawn", () => {
+  for (const singleplayer of [true, false]) {
+    let tick = 0;
+    const context = gameContext(tick);
+    context.bi.kj = () => tick;
+    context.aE.l6 = singleplayer;
+    context.ad.fI = () => false;
+    const { sent } = addAdjacentBot(context);
+    for (tick = 0; tick <= 600; tick++) hook.runInNewContext(context);
+    assert.deepEqual(sent, []);
+    assert.equal(context.__fx.autoExpand.getStatus().pending, false);
+    tick = 603;
+    hook.runInNewContext(context);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].target, 8);
   }
 });
 

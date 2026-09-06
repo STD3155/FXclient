@@ -37,10 +37,12 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
         }`, `if (__fx.economicAttack.isArmed()) __fx.autoExpand.update(bi.kj(), bi.aCo);
         if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
             && __fx.autoExpand.canPlan(bi.kj())
-            && (bi.kj() >= 600 || bi.kj() % 10 === 3 || __fx.autoExpand.shouldPlanOpening(bi.kj()))
+            && (bi.kj() >= __fx.autoExpand.openingEndTick
+                || (bi.kj() % 10 === 0 && __fx.autoExpand.shouldPlanOpening(bi.kj())))
             && (bi.kj() % 10 === 0 || bi.kj() % 10 === 3)) {
             var fxPlayer = aE.fB;
             var fxTick = bi.kj();
+            var fxOpeningFinished = fxTick >= __fx.autoExpand.openingEndTick;
             var fxIsCorrectionTick = fxTick % 10 === 3;
             var fxBalance = ah.hT[fxPlayer];
             var fxTerritory = ah.hF[fxPlayer];
@@ -51,13 +53,13 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                 directions: fxDirections,
                 isNeutral: function(fxCell) { return ad.fI(fxCell); },
                 getOwner: function(fxCell) { return ad.h1(fxCell) ? ad.fJ(fxCell) : null; },
-                maxDepth: fxIsCorrectionTick || fxTick >= 600 ? 1 : __fx.autoExpand.openingFrontierDepth,
+                maxDepth: fxOpeningFinished ? 1 : __fx.autoExpand.openingFrontierDepth,
                 maxNeutralTiles: __fx.autoExpand.openingFrontierTileLimit,
-                ownerSearchDepth: fxTick < 600 ? 6 : 2
+                ownerSearchDepth: fxOpeningFinished ? 2 : 6
             });
             var fxNeutralLayerSizes = fxAnalysis.neutralLayerSizes;
             var fxExistingNeutralAttack = ae.hU(fxPlayer, aE.fO);
-            var fxCanAttackBots = fxNeutralLayerSizes[0] === 0 && fxExistingNeutralAttack === 0;
+            var fxCanAttackBots = fxOpeningFinished && fxNeutralLayerSizes[0] === 0 && fxExistingNeutralAttack === 0;
             var fxCompetitorNearby = false;
             for (var fxOwnerIndex = fxAnalysis.nearbyOwners.length - 1; fxOwnerIndex >= 0; fxOwnerIndex--) {
                 var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
@@ -90,7 +92,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
             var fxAutoExpandTarget = aE.fO;
             var fxAttackPercentage = aS.hv();
             if (!fxIsCorrectionTick && fxNeutralLayerSizes[0] > 0 && fxExistingNeutralAttack === 0) {
-                if (fxTick < 600) {
+                if (!fxOpeningFinished) {
                     fxAutoExpand = __fx.autoExpand.planOpening(
                         fxTick,
                         fxBalance,
@@ -131,7 +133,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                         aE.gl
                     );
                 }
-            } else if (fxIsCorrectionTick && (fxTick >= 600 || !fxNeutralLayerSizes[0])) {
+            } else if (fxIsCorrectionTick && fxOpeningFinished) {
                 var fxNextIncome = fxNeutralLayerSizes[0] > 0
                     ? __fx.autoExpand.calculateNextIncome(
                         fxBalance,
