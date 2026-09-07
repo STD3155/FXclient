@@ -1048,10 +1048,11 @@ function n0() {
 			fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 === aE.data.tIncomeType ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer],
 			fxAutoExpand = null,
 			fxAutoExpandTarget = aE.fO,
-			fxAttackPercentage = aS.hv();
+			fxAttackPercentage = aS.hv(),
+			fxInterestIncome = __fx.autoExpand.calculateInterestIncome(fxBalance, af.aCn(fxPlayer));
 		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxDirections ? fxAutoExpand = fxOpeningFinished ? (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots,
-			fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, aE.gl)) : __fx.autoExpand.planOpening(fxTick, fxBalance, fxBorder,
-			fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
+			fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, aE.gl, fxInterestIncome)) : __fx.autoExpand.planOpening(fxTick, fxBalance,
+			fxBorder, fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
 				territory: fxTerritory,
 				armyIncomeScale: fxCanAttackBots,
 				territorialIncomeScale: fxTerritorialIncomeScale,
@@ -1060,8 +1061,8 @@ function n0() {
 				maxPlayers: aE.fO,
 				commandDelayTicks: aE.l6 ? 0 : 10
 			}) : fxIsCorrectionTick && fxOpeningFinished && (fxProjectedBalance = 0 < fxBorder[0] ? __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots, fxTerritorialIncomeScale) : 0,
-			fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, fxBotCandidates, aE.gl, fxDirections)) ? aE.fO : fxAutoExpand
-			.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
+			fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, fxBotCandidates, aE.gl, fxDirections, fxInterestIncome)) ? aE
+			.fO : fxAutoExpand.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
 	}
 	af.ed(), b5.ed(), aG.ed(), ap.ed(), bQ.z.ed(), am.n1(), aW.ed(), b0.ed(), bY.ed(), ag.ed(), ag.n2(), aX.ed(), bS.ed(), aV.ed(), aQ.ed(), b9.n3(), aO.ed(), b6.ed(), aS.ed(), ax.ed(), bg.ed(), bk.ed(), b1.z.ed(), b1.n4.ed(), u.ed(), bX.eQ.ed(), bC
 		.ed(), bi.ed()
