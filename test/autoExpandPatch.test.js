@@ -79,12 +79,27 @@ test("the selected limit still controls expansion after the opening", () => {
   }
 });
 
+test("game hook passes the current interest payment to every late neutral planner", () => {
+  for (const tick of [600, 603]) {
+    const context = gameContext(tick);
+    let receivedInterest;
+    const method = tick === 600 ? "planProactive" : "planCorrection";
+    context.__fx.autoExpand[method] = (...args) => {
+      receivedInterest = args[tick === 600 ? 8 : 10];
+      return null;
+    };
+    hook.runInNewContext(context);
+    assert.equal(receivedInterest, 35);
+  }
+});
+
 test("game hook captures affordable free land below the density cap before considering bots", () => {
   for (const singleplayer of [true, false]) {
     for (const tick of [600, 603]) {
       const context = gameContext(tick);
       context.aE.l6 = singleplayer;
       context.aE.data = { aIncomeType: 0, tIncomeType: 0, iIncomeType: 0 };
+      context.af.aCn = () => 300;
       context.ah.hT[0] = 10_000;
       context.ah.hF[0] = 1000;
       const { sent } = addAdjacentBot(context);
@@ -92,9 +107,22 @@ test("game hook captures affordable free land below the density cap before consi
       assert.equal(sent.length, 1);
       assert.equal(sent[0].target, 512);
       const amount = Math.floor(10_000 * (sent[0].encoded + 1) / 1024);
-      assert.ok(amount >= 3);
+      assert.ok(amount >= 300);
       assert.ok(amount + Math.floor(12 * 10_000 / 1024) <= 500);
     }
+  }
+});
+
+test("game hook waits when one interest payment does not fit the cheap-land budget", () => {
+  for (const tick of [600, 603]) {
+    const context = gameContext(tick);
+    context.aE.data = { aIncomeType: 0, tIncomeType: 0, iIncomeType: 0 };
+    context.ah.hT[0] = 10_000;
+    context.ah.hF[0] = 1000;
+    context.af.aCn = () => 700;
+    const { sent } = addAdjacentBot(context);
+    hook.runInNewContext(context);
+    assert.deepEqual(sent, []);
   }
 });
 

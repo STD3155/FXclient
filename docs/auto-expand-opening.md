@@ -45,6 +45,10 @@ Die Bedingungen der Suche sind:
 - Maximal ein Eröffnungsangriff je Gebietseinnahmezyklus und höchstens 50 % des
   Bestands vor der zusätzlichen Gebühr. Diese eigene Budgetgrenze gilt
   unabhängig vom eingestellten Slider-Limit.
+- Jeder Angriff auf neutrales Land sendet mindestens die aktuelle reine
+  Zinszahlung (`max(1, floor(Zinssatz * Bestand / 10.000))`). Armee- und
+  Gebietseinkommen zählen nicht zu dieser Untergrenze. So wird die feste
+  Angriffsgebühr nicht für unverhältnismäßig kleine Armeen bezahlt.
 - Der Angriff einschließlich Rückkehr der Resttruppen muss im betrachteten
   Gebietseinnahmezyklus enden. Laufende neutrale Angriffe werden nicht verstärkt.
 - Vorschau auf höchstens 48 vollständige neutrale Schichten. Die Suche stoppt
@@ -77,9 +81,11 @@ Budgetregel für günstige Expansion, kein berechnetes wirtschaftliches Optimum.
 Geprüft werden die tatsächlich gesendeten Truppen nach Rundung des Prozentsatzes
 und die zusätzliche Gebühr `floor(12 * Bestand / 1024)`. Mindestens 95 % des
 Bestands bleiben dadurch schon vor der Rückkehr der Restarmee verfügbar. Der
-Angriff muss die vollständige unmittelbare Grenzschicht finanzieren können und
-ins Slider-Limit passen. Bei 10.000 Truppen und 100 angrenzenden neutralen Feldern
-sind das unter Standardbedingungen 302 entsandte Truppen plus 117 Gebühr.
+Angriff muss die vollständige unmittelbare Grenzschicht und mindestens eine
+aktuelle Zinszahlung finanzieren können sowie ins Slider-Limit passen. Passt
+diese Untergrenze einschließlich Gebühr nicht ins 5-%-Budget, wartet ECO. Bei
+10.000 Truppen, 100 angrenzenden neutralen Feldern und einer Zinszahlung von 300
+Truppen sind es nach Prozentrundung 302 entsandte Truppen plus 117 Gebühr.
 
 Nach dem gemeinsamen Cooldown wird die neue Grenze erneut geprüft. Ein noch
 laufender neutraler Angriff wird nicht verstärkt. Die Eröffnungsplanung bleibt
@@ -126,8 +132,9 @@ Gebiet bei minimalem, niedrigem, hohem und wechselndem Slider-Limit. Sie prüfen
 offenes und begrenztes Land sowie Gegnernähe. Der Spiel-Hook wird außerdem für
 Singleplayer und Multiplayer sowie den Übergang ab Tick 600 geprüft.
 Weitere Tests prüfen die 5-%-Schwelle einschließlich Gebühren und Rundung,
-günstige Expansion unterhalb der Dichtegrenze, den gemeinsamen Cooldown und
-die Bot-Sperre während der gesamten Eröffnung bei eingeschlossenem Start.
+die Mindesthöhe einer aktuellen Zinszahlung, günstige Expansion unterhalb der
+Dichtegrenze, den gemeinsamen Cooldown und die Bot-Sperre während der gesamten
+Eröffnung bei eingeschlossenem Start.
 
 Ergebnis nach 600 Ticks:
 

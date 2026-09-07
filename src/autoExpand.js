@@ -35,7 +35,7 @@ export function calculateNextIncome(
   armyIncomeScale = Math.max(0, armyIncomeScale);
   territorialIncomeScale = Math.max(0, territorialIncomeScale);
 
-  const interestIncome = Math.max(Math.floor(interestRate * balance / 10_000), 1);
+  const interestIncome = calculateInterestIncome(balance, interestRate);
   const armyIncome = Math.floor(armyIncomeScale * territory / 128);
   const ticksUntilIncome = positiveModulo(9 - tick, 10);
   const nextIncomeTick = tick + ticksUntilIncome;
@@ -44,6 +44,13 @@ export function calculateNextIncome(
     : 0;
 
   return interestIncome + armyIncome + territorialIncome;
+}
+
+export function calculateInterestIncome(balance, interestRate) {
+  if (![balance, interestRate].every(Number.isFinite)) return 0;
+  balance = Math.max(0, Math.floor(balance));
+  interestRate = Math.max(0, interestRate);
+  return Math.max(Math.floor(interestRate * balance / 10_000), 1);
 }
 
 function calculatePercentageLimit(balance, normalPercentage) {
@@ -125,14 +132,16 @@ export function calculateAutoExpandAttack(
   nextIncome,
   normalPercentage = ATTACK_PARTS - 1,
   neutralFrontierTiles = 0,
-  expansionCost = DEFAULT_EXPANSION_COST
+  expansionCost = DEFAULT_EXPANSION_COST,
+  interestIncome = 0
 ) {
-  if (![balance, territory, nextIncome, normalPercentage, neutralFrontierTiles, expansionCost].every(Number.isFinite)) return null;
+  if (![balance, territory, nextIncome, normalPercentage, neutralFrontierTiles, expansionCost, interestIncome].every(Number.isFinite)) return null;
   balance = Math.max(0, Math.floor(balance));
   territory = Math.max(0, Math.floor(territory));
   nextIncome = Math.max(0, nextIncome);
   neutralFrontierTiles = Math.max(0, Math.floor(neutralFrontierTiles));
   expansionCost = Math.max(0, Math.floor(expansionCost));
+  interestIncome = Math.max(0, Math.floor(interestIncome));
   if (balance === 0 || territory === 0) return null;
 
   const capacity = OPTIMAL_GROWTH_DENSITY * territory;
@@ -141,7 +150,8 @@ export function calculateAutoExpandAttack(
 
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
-  const minimumAmount = neutralFrontierTiles * (expansionCost + 1);
+  const frontierMinimumAmount = neutralFrontierTiles * (expansionCost + 1);
+  const minimumAmount = Math.max(frontierMinimumAmount, interestIncome);
   const desiredAmount = Math.max(overflow, minimumAmount);
   const amount = Math.min(available, percentageLimit, desiredAmount);
   if (amount <= 0 || amount < minimumAmount) return null;
@@ -153,6 +163,8 @@ export function calculateAutoExpandAttack(
     overflow,
     capacity,
     minimumAmount,
+    frontierMinimumAmount,
+    interestMinimumAmount: interestIncome,
     percentageLimit
   };
 }
@@ -190,21 +202,24 @@ export function calculateProactiveExpandAttack(
   projectedBalance,
   neutralFrontierTiles,
   normalPercentage = ATTACK_PARTS - 1,
-  expansionCost = DEFAULT_EXPANSION_COST
+  expansionCost = DEFAULT_EXPANSION_COST,
+  interestIncome = 0
 ) {
-  if (![balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage, expansionCost].every(Number.isFinite)) return null;
+  if (![balance, territory, projectedBalance, neutralFrontierTiles, normalPercentage, expansionCost, interestIncome].every(Number.isFinite)) return null;
   balance = Math.max(0, Math.floor(balance));
   territory = Math.max(0, Math.floor(territory));
   projectedBalance = Math.max(0, Math.floor(projectedBalance));
   neutralFrontierTiles = Math.max(0, Math.floor(neutralFrontierTiles));
   expansionCost = Math.max(0, Math.floor(expansionCost));
+  interestIncome = Math.max(0, Math.floor(interestIncome));
   if (balance === 0 || territory === 0 || neutralFrontierTiles === 0) return null;
 
   const capacity = OPTIMAL_GROWTH_DENSITY * territory;
   const projectedOverflow = projectedBalance - capacity;
   if (projectedOverflow <= 0) return null;
 
-  const minimumAmount = (expansionCost + 1) * neutralFrontierTiles;
+  const frontierMinimumAmount = (expansionCost + 1) * neutralFrontierTiles;
+  const minimumAmount = Math.max(frontierMinimumAmount, interestIncome);
   const available = balance - Math.floor(SERVER_RESERVE_PARTS * balance / ATTACK_PARTS);
   const percentageLimit = calculatePercentageLimit(balance, normalPercentage);
   if (minimumAmount > available || minimumAmount > percentageLimit) return null;
@@ -219,6 +234,8 @@ export function calculateProactiveExpandAttack(
     projectedOverflow,
     expectedTerritoryGain: neutralFrontierTiles,
     minimumAmount,
+    frontierMinimumAmount,
+    interestMinimumAmount: interestIncome,
     percentageLimit
   };
 }
@@ -228,17 +245,20 @@ export function calculateAffordableExpandAttack(
   territory,
   neutralFrontierTiles,
   normalPercentage = ATTACK_PARTS - 1,
-  expansionCost = DEFAULT_EXPANSION_COST
+  expansionCost = DEFAULT_EXPANSION_COST,
+  interestIncome = 0
 ) {
-  if (![balance, territory, neutralFrontierTiles, normalPercentage, expansionCost].every(Number.isFinite)) return null;
+  if (![balance, territory, neutralFrontierTiles, normalPercentage, expansionCost, interestIncome].every(Number.isFinite)) return null;
   balance = Math.floor(balance);
   territory = Math.floor(territory);
   neutralFrontierTiles = Math.floor(neutralFrontierTiles);
   expansionCost = Math.max(0, Math.floor(expansionCost));
+  interestIncome = Math.max(0, Math.floor(interestIncome));
   normalPercentage = Math.max(0, Math.min(ATTACK_PARTS - 1, Math.floor(normalPercentage)));
   if (balance <= 0 || territory <= 0 || neutralFrontierTiles <= 0) return null;
 
-  const minimumAmount = (expansionCost + 1) * neutralFrontierTiles;
+  const frontierMinimumAmount = (expansionCost + 1) * neutralFrontierTiles;
+  const minimumAmount = Math.max(frontierMinimumAmount, interestIncome);
   const encoded = Math.ceil(minimumAmount * ATTACK_PARTS / balance) - 1;
   if (encoded < 0 || encoded > normalPercentage) return null;
   const amount = Math.floor(balance * (encoded + 1) / ATTACK_PARTS);
@@ -254,6 +274,8 @@ export function calculateAffordableExpandAttack(
     amount,
     fee,
     minimumAmount,
+    frontierMinimumAmount,
+    interestMinimumAmount: interestIncome,
     percentageLimit,
     commitmentLimit,
     expectedTerritoryGain: neutralFrontierTiles
@@ -336,7 +358,8 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       target = null,
       normalPercentage = ATTACK_PARTS - 1,
       neutralFrontierTiles = 0,
-      expansionCost = DEFAULT_EXPANSION_COST
+      expansionCost = DEFAULT_EXPANSION_COST,
+      interestIncome = 0
     ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
@@ -347,7 +370,8 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
         nextIncome,
         normalPercentage,
         neutralFrontierTiles,
-        expansionCost
+        expansionCost,
+        interestIncome
       );
       return schedule(tick, "correction", attack, target);
     },
@@ -359,7 +383,8 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       neutralFrontierTiles,
       target = null,
       normalPercentage = ATTACK_PARTS - 1,
-      expansionCost = DEFAULT_EXPANSION_COST
+      expansionCost = DEFAULT_EXPANSION_COST,
+      interestIncome = 0
     ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
@@ -370,9 +395,10 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
         projectedBalance,
         neutralFrontierTiles,
         normalPercentage,
-        expansionCost
+        expansionCost,
+        interestIncome
       ) ?? (tick >= OPENING_END_TICK
-        ? calculateAffordableExpandAttack(balance, territory, neutralFrontierTiles, normalPercentage, expansionCost)
+        ? calculateAffordableExpandAttack(balance, territory, neutralFrontierTiles, normalPercentage, expansionCost, interestIncome)
         : null);
       return schedule(tick, "proactive", attack, target);
     },
@@ -416,7 +442,8 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
       normalPercentage,
       botCandidates,
       expansionCost = DEFAULT_EXPANSION_COST,
-      existingNeutralAttack = 0
+      existingNeutralAttack = 0,
+      interestIncome = 0
     ) {
       if (!Number.isFinite(tick)) return null;
       tick = Math.floor(tick);
@@ -429,8 +456,9 @@ export function createAutoExpandController(triggerTick = AUTO_EXPAND_TRIGGER_TIC
           nextIncome,
           normalPercentage,
           neutralFrontierTiles,
-          expansionCost
-        ) ?? calculateAffordableExpandAttack(balance, territory, neutralFrontierTiles, normalPercentage, expansionCost)
+          expansionCost,
+          interestIncome
+        ) ?? calculateAffordableExpandAttack(balance, territory, neutralFrontierTiles, normalPercentage, expansionCost, interestIncome)
         : null;
       if (neutralAttack !== null) {
         const targetedNeutralAttack = { ...neutralAttack, target: neutralTarget };
@@ -497,6 +525,7 @@ export default {
   calculateProactive: calculateProactiveExpandAttack,
   calculateAffordable: calculateAffordableExpandAttack,
   calculateOpening: calculateOpeningExpandAttack,
+  calculateInterestIncome,
   calculateNextIncome,
   projectBalance,
   findBotAttack: findAutoExpandBotAttack,

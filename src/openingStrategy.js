@@ -135,7 +135,11 @@ export function calculateOpeningExpandAttack(
           before.balance - Math.floor(ATTACK_FEE_PARTS * before.balance / ATTACK_PARTS)
         );
         let tiles = 0;
-        let minimumAmount = 0;
+        const interestMinimumAmount = Math.max(
+          1,
+          Math.floor(before.balance * interestRate(before.balance, before.territory, start, economy) / 10_000)
+        );
+        let minimumAmount = interestMinimumAmount;
         let returnTick = start + 7 + economy.commandDelayTicks;
         let territory = before.territory;
         for (let offset = before.offset; offset < layers.length && layers[offset] > 0; offset++) {
@@ -147,7 +151,10 @@ export function calculateOpeningExpandAttack(
           returnTick += expansionInterval(territory);
           territory += layers[offset];
           if (returnTick > end) break;
-          const attack = { tick: start, encoded, amount, minimumAmount, depth: offset - before.offset + 1, expectedTerritoryGain: tiles, percentageLimit: budget };
+          const attack = {
+            tick: start, encoded, amount, minimumAmount, interestMinimumAmount,
+            depth: offset - before.offset + 1, expectedTerritoryGain: tiles, percentageLimit: budget
+          };
           const after = advance(before, start, end, layers, economy, expansionCost, attack);
           if (after.army !== 0) continue;
           keep({ ...after, first: from === tick ? attack : state.first });

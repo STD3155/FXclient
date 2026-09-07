@@ -10,6 +10,7 @@ test("plans a late, affordable first attack and forecasts the complete opening",
   const attack = calculateOpeningExpandAttack(512, 0, layers, 511);
   assert.equal(attack.tick, 80);
   assert.equal(attack.amount, 144);
+  assert.ok(attack.amount >= attack.interestMinimumAmount);
   assert.equal(attack.depth, 3);
   assert.equal(attack.expectedTerritoryGain, 60);
   assert.equal(attack.projectedBalance, 9806);

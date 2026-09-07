@@ -4,6 +4,7 @@ import {
   analyzeExpansionFrontier,
   calculateAffordableExpandAttack,
   calculateAutoExpandAttack,
+  calculateInterestIncome,
   calculateNextIncome,
   calculateProactiveExpandAttack,
   createAutoExpandController,
@@ -66,6 +67,21 @@ test("projects only the income that is actually paid on the next income tick", (
   assert.equal(calculateNextIncome(9_000, 100, 100, 93), 190);
 });
 
+test("calculates the game's current interest payment", () => {
+  assert.equal(calculateInterestIncome(10_000, 700), 700);
+  assert.equal(calculateInterestIncome(10, 1), 1);
+  assert.equal(calculateInterestIncome(NaN, 700), 0);
+});
+
+test("never corrects into free land with less than one interest payment", () => {
+  const attack = calculateAutoExpandAttack(10_000, 100, 175, 1023, 10, 2, 700);
+  assert.equal(attack.minimumAmount, 700);
+  assert.equal(attack.frontierMinimumAmount, 30);
+  assert.equal(attack.interestMinimumAmount, 700);
+  assert.ok(Math.floor(10_000 * (attack.encoded + 1) / 1024) >= 700);
+  assert.equal(calculateAutoExpandAttack(10_000, 100, 175, 30, 10, 2, 700), null);
+});
+
 test("includes custom army and territorial income scales", () => {
   assert.equal(calculateNextIncome(10_000, 64, 100, 93, 16, 48), 204);
 });
@@ -82,6 +98,13 @@ test("starts a minimal reliable neutral-front expansion before the projected cap
   assert.equal(attack.amount, 30);
   assert.equal(attack.encoded, 3);
   assert.equal(attack.expectedTerritoryGain, 10);
+});
+
+test("raises proactive free-land attacks to the current interest payment", () => {
+  const attack = calculateProactiveExpandAttack(10_000, 100, 10_100, 10, 1023, 2, 700);
+  assert.equal(attack.minimumAmount, 700);
+  assert.equal(attack.amount, 700);
+  assert.ok(Math.floor(10_000 * (attack.encoded + 1) / 1024) >= 700);
 });
 
 test("does not start proactive expansion without a projected overflow or enough available troops", () => {
@@ -106,6 +129,14 @@ test("affordability includes the attack fee and encoded rounding at the five-per
   assert.equal(calculateAffordableExpandAttack(10_000, 1000, 127), null);
   // The army alone would fit the budget; its fee makes this unaffordable.
   assert.equal(calculateAffordableExpandAttack(10_000, 1000, 150), null);
+});
+
+test("affordable free-land attacks either cover one interest payment or wait", () => {
+  const attack = calculateAffordableExpandAttack(10_000, 1000, 10, 511, 2, 300);
+  assert.equal(attack.frontierMinimumAmount, 30);
+  assert.equal(attack.interestMinimumAmount, 300);
+  assert.ok(attack.amount >= 300);
+  assert.equal(calculateAffordableExpandAttack(10_000, 1000, 10, 511, 2, 400), null);
 });
 
 test("affordable expansion respects the slider, custom costs and valid frontier data", () => {

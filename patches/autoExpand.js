@@ -91,6 +91,7 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
             var fxAutoExpand = null;
             var fxAutoExpandTarget = aE.fO;
             var fxAttackPercentage = aS.hv();
+            var fxInterestIncome = __fx.autoExpand.calculateInterestIncome(fxBalance, af.aCn(fxPlayer));
             if (!fxIsCorrectionTick && fxNeutralLayerSizes[0] > 0 && fxExistingNeutralAttack === 0) {
                 if (!fxOpeningFinished) {
                     fxAutoExpand = __fx.autoExpand.planOpening(
@@ -130,7 +131,8 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                         fxNeutralLayerSizes[0],
                         aE.fO,
                         fxAttackPercentage,
-                        aE.gl
+                        aE.gl,
+                        fxInterestIncome
                     );
                 }
             } else if (fxIsCorrectionTick && fxOpeningFinished) {
@@ -154,7 +156,8 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                     fxAttackPercentage,
                     fxBotCandidates,
                     aE.gl,
-                    fxExistingNeutralAttack
+                    fxExistingNeutralAttack,
+                    fxInterestIncome
                 );
                 fxAutoExpandTarget = fxAutoExpand === null ? aE.fO : fxAutoExpand.target;
             }

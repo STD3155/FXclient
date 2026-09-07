@@ -68,24 +68,28 @@ Eroberung ausgezahlt.
    je Frontfeld über deren Eroberungskosten verfügbar sein. Bei Kosten `c` und
    Schichtgrößen `n₁ … nₖ` ist der notwendige Anfangsbetrag das Maximum aller
    Werte `c × Summe der vorherigen Schichtgrößen + (c + 1) × aktuelle Schichtgröße`.
-4. Begrenze die entsandte Armee auf 50 % des Bestands vor Gebühr, unabhängig
+4. Sende auf neutrales Land nie weniger als die aktuelle reine Zinszahlung
+   `max(1, floor(Zinssatz × Bestand / 10.000))`. Armee- und Gebietseinkommen
+   gehören nicht zu dieser Untergrenze. Reicht ein anderes Budget dafür nicht,
+   warte statt einen unverhältnismäßig kleinen Angriff zu bezahlen.
+5. Begrenze die entsandte Armee auf 50 % des Bestands vor Gebühr, unabhängig
    von der Limit-Einstellung des Sliders. Auch eine Änderung des Limits darf
    die Eröffnungsplanung nicht beeinflussen. Prüfe die tatsächlich übertragene
    Truppenmenge nach Rundung; sie muss sowohl die Mindestmenge als auch das
    Budget einhalten. Reicht das Budget nicht für die erste Schicht, warte.
-5. Plane Anlaufzeit, sämtliche Eroberungsschritte und die Rückkehr der Restarmee
+6. Plane Anlaufzeit, sämtliche Eroberungsschritte und die Rückkehr der Restarmee
    ein. Der Angriff muss einschließlich Rückkehr im betrachteten
    Gebietseinnahmezyklus enden. Füge für Multiplayer zehn Ticks Zeitpuffer hinzu;
    dies ist eine Laufzeitannahme, keine Garantie über die Netzwerkverzögerung.
-6. Simuliere für jede Variante den weiteren Verlauf mit Zinsen, Gebühren,
+7. Simuliere für jede Variante den weiteren Verlauf mit Zinsen, Gebühren,
    Gebietseinnahmen und zurückkehrenden Truppen. Bewerte im ungestörten Fall
    `verbleibende Truppen + Eroberungskosten × Gebiet` bei Tick 600. Behalte für
    denselben Gebiet- und Cooldown-Zustand die Variante mit dem höheren Bestand.
-7. Sind Gegner nahe, verkürze die Vorschau auf den aktuellen und den nächsten
+8. Sind Gegner nahe, verkürze die Vorschau auf den aktuellen und den nächsten
    Gebietseinnahmezyklus, spätestens bis Tick 600. Bewerte dann
    `verbleibende Truppen + (Eroberungskosten + 1) × Gebiet`, um freie Fläche
    früher zu sichern. Diese Gewichtung ist eine Heuristik für Konkurrenzdruck.
-8. Wähle die beste zulässige Variante. Liegt ihr Angriff in der Zukunft, warte
+9. Wähle die beste zulässige Variante. Liegt ihr Angriff in der Zukunft, warte
    bis zu diesem Zeitpunkt und rechne vor dem Senden mit der aktuellen Grenze
    und dem tatsächlichen Bestand neu. Verstärke keinen noch laufenden neutralen
    Angriff. Unterbrich die geplante Eröffnung bei verfügbarem neutralem Land
@@ -118,8 +122,10 @@ Eroberung ausgezahlt.
   Rundung einschließlich Angriffsgebühr höchstens 5 % des Bestands bindet.
   Mindestens 95 % bleiben damit vor der Rückkehr der Restarmee verfügbar. Dies
   ist eine zusätzliche Budgetheuristik; Dichtekorrekturen können größere
-  Angriffe auslösen. Prüfe die neue Grenze nach jedem Cooldown erneut und
-  verstärke keine noch laufende neutrale Armee.
+  Angriffe auslösen. Auch hier muss die Armee mindestens der aktuellen reinen
+  Zinszahlung entsprechen; passt das zusammen mit der Gebühr nicht ins Budget,
+  wartet ECO. Prüfe die neue Grenze nach jedem Cooldown erneut und verstärke
+  keine noch laufende neutrale Armee.
 - Gib automatische Botangriffe frühestens nach Abschluss der Eröffnung bei
   Tick 600 frei. Auch bei vorher ausgeschöpfter neutraler Grenze bleibt die
   Botautomatik bis dahin gesperrt. Zusätzlich dürfen kein direkt erreichbares
