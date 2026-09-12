@@ -1,4 +1,8 @@
-export default (/** @type {import('../modUtils.js').default} */ { insertCode }) => {
+import { getAutoExpandBindings } from '../scripts/autoExpandBindings.js';
+
+export default (/** @type {import('../modUtils.js').default} */ modUtils) => {
+    const { insertCode } = modUtils;
+    const dictionary = getAutoExpandBindings(modUtils);
     // Resolve every outgoing land attack in one place. When ECO is armed this
     // caps the required conquest amount at the percentage selected by the user.
     insertCode(`this.hy = function(j4, jv) {
@@ -13,5 +17,5 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode }) 
             jv < aE.fO ? ah.hF[jv] : null,
             jv < aE.fO ? ae.hU(aE.fB, jv) : 0
         );
-        if (j4 === null) return;`)
+        if (j4 === null) return;`, { dictionary })
 }

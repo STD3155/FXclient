@@ -1,0 +1,17 @@
+// Minimal excerpts of the game before its September symbol renaming.
+this.hZ=function(code){if(aE.ha||aN.hb){return}if(!bD.gn.hc(0)&&!bD.gn.hc(1)){return}if(!bD.gn.hd(aE.fB)){return}};
+this.lQ=function(player,jv){return player!==jv&&(bj.fP[player]===0||bj.fP[player]!==bj.fP[jv])};
+this.jn=function(player){var fT=ad.fT;for(var aC=ah.h7[player].length-1;aC>=0;aC--){if(ad.jx(ah.h7[player][aC])){for(var iI=3;iI>=0;iI--){if(ad.fI(ah.h7[player][aC]+fT[iI])){ah.gt[player].push(ah.h7[player][aC]);break}}}}};
+this.aIm=function(f5,player){return this.fI(f5)||this.h1(f5)&&player!==this.fJ(f5)};
+function aKl(player){if(bD.gn.k9(player)&&player<aE.km){return 0}var eF=aKj[bO.fs((aE.fO-1)*ah.hF[player],aE.kW)];return eF};
+var kD=ah.hT[kC]+ae.hU(kC,player);
+var aKv=bO.fs(af.aCn(gz)*hT[gz],1e4);
+gL=bO.fs(gJ,gN);if(gL>aE.gl){return true};
+this.hy=function(j4,jv){if(this.pl){this.pl=0;bm.po.pp(182,j4)}if(aE.l6){bB.pg.hy(aE.fB,j4,jv)}else{b1.pm.pq(j4,jv)}};
+var fG=bP.fH(ho);var ht=ad.fI(fG)?aE.fO:ad.fJ(fG);bB.hr.hu(aS.hv(),ho,ht);
+this.ed=function(){this.a1X.adC++};this.kj=function(){return this.a1X.adC};
+this.a1X=null;this.dq=false;this.eY=0;this.aCo=56;
+bi.eY=adZ=performance.now();bi.a1X.ed();window.requestAnimationFrame(ada);
+var jm=ae.k7(player,bR.fN[0]);
+function n0(){b2.ed();aH.ed();ao.ed();af.ed();b5.ed();aG.ed();ap.ed();bQ.z.ed();am.n1();aW.ed();b0.ed();bY.ed();ag.ed();ag.n2();aX.ed();bS.ed();aV.ed();aQ.ed();b9.n3();aO.ed();b6.ed();aS.ed();ax.ed();bg.ed();bk.ed();b1.z.ed();b1.n4.ed();u.ed();bX.eQ.ed();bC.ed();bi.ed()};
+function acceptedAttack(player,j4,jm){if(!ap.jX.jl(player,jm)){return}bD.gn.mw(player)}

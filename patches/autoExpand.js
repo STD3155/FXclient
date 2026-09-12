@@ -1,4 +1,8 @@
-export default (/** @type {import('../modUtils.js').default} */ { insertCode, replaceRawCode }) => {
+import { getAutoExpandBindings } from '../scripts/autoExpandBindings.js';
+
+export default (/** @type {import('../modUtils.js').default} */ modUtils) => {
+    const { insertCode, replaceRawCode } = modUtils;
+    const dictionary = getAutoExpandBindings(modUtils);
     // Plan the opening around territorial income; all automatic sends share
     // a cooldown, including correction and bot attacks.
     insertCode(`function n0() {
@@ -165,12 +169,13 @@ export default (/** @type {import('../modUtils.js').default} */ { insertCode, re
                 if (aE.l6) bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget);
                 else b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget);
             }
-        }`)
+        }`, { dictionary })
 
     // Clear the pending request only after the authoritative event passed all
     // validation and created or reinforced the attack.
     replaceRawCode(
         `if(!ap.jX.jl(player,jm)){return}bD.gn.mw(player)`,
-        `if(!ap.jX.jl(player,jm)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(bR.fN[0],j4,bi.kj())}bD.gn.mw(player)`
+        `if(!ap.jX.jl(player,jm)){return}if(player===aE.fB){__fx.autoExpand.acknowledge(bR.fN[0],j4,bi.kj())}bD.gn.mw(player)`,
+        dictionary
     )
 }

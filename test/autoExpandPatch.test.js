@@ -7,7 +7,12 @@ import autoExpand, { createAutoExpandController } from "../src/autoExpand.js";
 import economicAttack from "../src/economicAttack.js";
 
 let hook;
-patch({ insertCode: (_, code) => { hook = new vm.Script(code); }, replaceRawCode() {} });
+patch({
+  // This suite tests planning against the original game-name mocks.
+  matchCode: code => Object.fromEntries([...code.matchAll(/\b\w+\b/g)].map(([word]) => [word, word])),
+  insertCode: (_, code) => { hook = new vm.Script(code); },
+  replaceRawCode() {}
+});
 
 function gameContext(tick) {
   const controller = { ...autoExpand, ...createAutoExpandController() };
