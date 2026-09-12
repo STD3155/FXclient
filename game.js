@@ -1013,25 +1013,25 @@ function mz() {
 }
 
 function n1() {
-	if (b2.ee(), aH.ee(), ao.ee(), __fx.economicAttack.isArmed() && __fx.autoExpand.update(bi.kj(), bi.aCo), __fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB) && __fx.autoExpand.canPlan(bi.kj()) && (bi.kj() >= __fx
-			.autoExpand.openingEndTick || bi.kj() % 10 == 0 && __fx.autoExpand.shouldPlanOpening(bi.kj())) && (bi.kj() % 10 == 0 || bi.kj() % 10 == 3)) {
-		for (var fxPlayer = aE.fB, fxTick = bi.kj(), fxOpeningFinished = fxTick >= __fx.autoExpand.openingEndTick, fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hT[fxPlayer], fxTerritory = ah.hF[fxPlayer], fxBorder = ah.h7[fxPlayer],
-				fxDirections = ad.fT, fxAnalysis = __fx.autoExpand.analyzeFrontier({
+	if (b2.ee(), aH.ee(), ao.ee(), __fx.economicAttack.isArmed() && __fx.autoExpand.update(bi.kk(), bi.aDX), __fx.economicAttack.isArmed() && !aE.hb && !aN.hc && bD.go.hd(1) && bD.go.he(aE.fC) && __fx.autoExpand.canPlan(bi.kk()) && (bi.kk() >= __fx
+			.autoExpand.openingEndTick || bi.kk() % 10 == 0 && __fx.autoExpand.shouldPlanOpening(bi.kk())) && (bi.kk() % 10 == 0 || bi.kk() % 10 == 3)) {
+		for (var fxPlayer = aE.fC, fxTick = bi.kk(), fxOpeningFinished = fxTick >= __fx.autoExpand.openingEndTick, fxIsCorrectionTick = fxTick % 10 == 3, fxBalance = ah.hU[fxPlayer], fxTerritory = ah.hG[fxPlayer], fxBorder = ah.h8[fxPlayer],
+				fxDirections = ad.fU, fxAnalysis = __fx.autoExpand.analyzeFrontier({
 					border: fxBorder,
 					directions: fxDirections,
 					isNeutral: function(fxCell) {
-						return ad.fI(fxCell)
+						return ad.fJ(fxCell)
 					},
 					getOwner: function(fxCell) {
-						return ad.h1(fxCell) ? ad.fJ(fxCell) : null
+						return ad.h2(fxCell) ? ad.fK(fxCell) : null
 					},
 					maxDepth: fxOpeningFinished ? 1 : __fx.autoExpand.openingFrontierDepth,
 					maxNeutralTiles: __fx.autoExpand.openingFrontierTileLimit,
 					ownerSearchDepth: fxOpeningFinished ? 2 : 6
-				}), fxBorder = fxAnalysis.neutralLayerSizes, fxDirections = ae.hU(fxPlayer, aE.fO), fxCanAttackBots = fxOpeningFinished && 0 === fxBorder[0] && 0 === fxDirections, fxCompetitorNearby = !1, fxOwnerIndex = fxAnalysis.nearbyOwners
+				}), fxBorder = fxAnalysis.neutralLayerSizes, fxDirections = ae.hV(fxPlayer, aE.fP), fxCanAttackBots = fxOpeningFinished && 0 === fxBorder[0] && 0 === fxDirections, fxCompetitorNearby = !1, fxOwnerIndex = fxAnalysis.nearbyOwners
 				.length - 1; 0 <= fxOwnerIndex; fxOwnerIndex--) {
 			var fxOwner = fxAnalysis.nearbyOwners[fxOwnerIndex];
-			if (fxOwner < aE.fO && fxOwner !== fxPlayer && bD.gn.hd(fxOwner) && bD.gn.lQ(fxPlayer, fxOwner)) {
+			if (fxOwner < aE.fP && fxOwner !== fxPlayer && bD.go.he(fxOwner) && bD.go.lR(fxPlayer, fxOwner)) {
 				fxCompetitorNearby = !0;
 				break
 			}
@@ -1040,32 +1040,32 @@ function n1() {
 		if (fxIsCorrectionTick && fxCanAttackBots)
 			for (var fxBotIndex = fxAnalysis.adjacentOwners.length - 1; 0 <= fxBotIndex; fxBotIndex--) {
 				var fxBotTarget = fxAnalysis.adjacentOwners[fxBotIndex];
-				fxBotTarget >= aE.km && fxBotTarget < aE.fO && bD.gn.hd(fxBotTarget) && bD.gn.lQ(fxPlayer, fxBotTarget) && fxBotCandidates.push({
+				fxBotTarget >= aE.kn && fxBotTarget < aE.fP && bD.go.he(fxBotTarget) && bD.go.lR(fxPlayer, fxBotTarget) && fxBotCandidates.push({
 					id: fxBotTarget,
-					balance: ah.hT[fxBotTarget],
-					territory: ah.hF[fxBotTarget],
-					existingAttack: ae.hU(fxPlayer, fxBotTarget)
+					balance: ah.hU[fxBotTarget],
+					territory: ah.hG[fxBotTarget],
+					existingAttack: ae.hV(fxPlayer, fxBotTarget)
 				})
 			}
 		var fxProjectedBalance, fxCanAttackBots = 0 === aE.data.aIncomeType ? 0 : 1 === aE.data.aIncomeType ? aE.data.aIncomeValue : aE.data.aIncomeData[fxPlayer],
 			fxTerritorialIncomeScale = 0 === aE.data.tIncomeType ? 32 : 1 === aE.data.tIncomeType ? aE.data.tIncomeValue : aE.data.tIncomeData[fxPlayer],
 			fxAutoExpand = null,
-			fxAutoExpandTarget = aE.fO,
-			fxAttackPercentage = aS.hv(),
-			fxInterestIncome = __fx.autoExpand.calculateInterestIncome(fxBalance, af.aCn(fxPlayer));
-		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxDirections ? fxAutoExpand = fxOpeningFinished ? (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots,
-			fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, aE.gl, fxInterestIncome)) : __fx.autoExpand.planOpening(fxTick, fxBalance,
-			fxBorder, fxAttackPercentage, fxCompetitorNearby, aE.fO, aE.gl, {
+			fxAutoExpandTarget = aE.fP,
+			fxAttackPercentage = aS.hw(),
+			fxInterestIncome = __fx.autoExpand.calculateInterestIncome(fxBalance, af.aDW(fxPlayer));
+		!fxIsCorrectionTick && 0 < fxBorder[0] && 0 === fxDirections ? fxAutoExpand = fxOpeningFinished ? (fxProjectedBalance = __fx.autoExpand.projectBalance(fxBalance, fxTerritory, af.aDW(fxPlayer), fxTick, fxCanAttackBots,
+			fxTerritorialIncomeScale, 2), __fx.autoExpand.planProactive(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fP, fxAttackPercentage, aE.gm, fxInterestIncome)) : __fx.autoExpand.planOpening(fxTick, fxBalance,
+			fxBorder, fxAttackPercentage, fxCompetitorNearby, aE.fP, aE.gm, {
 				territory: fxTerritory,
 				armyIncomeScale: fxCanAttackBots,
 				territorialIncomeScale: fxTerritorialIncomeScale,
 				interestScale: 0 === aE.data.iIncomeType ? 64 : 1 === aE.data.iIncomeType ? aE.data.iIncomeValue : aE.data.iIncomeData[fxPlayer],
-				mapTerritory: aE.kW,
-				maxPlayers: aE.fO,
-				commandDelayTicks: aE.l6 ? 0 : 10
-			}) : fxIsCorrectionTick && fxOpeningFinished && (fxProjectedBalance = 0 < fxBorder[0] ? __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aCn(fxPlayer), fxTick, fxCanAttackBots, fxTerritorialIncomeScale) : 0,
-			fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fO, fxAttackPercentage, fxBotCandidates, aE.gl, fxDirections, fxInterestIncome)) ? aE
-			.fO : fxAutoExpand.target), null !== fxAutoExpand && (aE.l6 ? bB.pg.hy(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.pm.pq(fxAutoExpand.encoded, fxAutoExpandTarget))
+				mapTerritory: aE.kX,
+				maxPlayers: aE.fP,
+				commandDelayTicks: aE.l7 ? 0 : 10
+			}) : fxIsCorrectionTick && fxOpeningFinished && (fxProjectedBalance = 0 < fxBorder[0] ? __fx.autoExpand.calculateNextIncome(fxBalance, fxTerritory, af.aDW(fxPlayer), fxTick, fxCanAttackBots, fxTerritorialIncomeScale) : 0,
+			fxAutoExpandTarget = null === (fxAutoExpand = __fx.autoExpand.planCorrection(fxTick, fxBalance, fxTerritory, fxProjectedBalance, fxBorder[0], aE.fP, fxAttackPercentage, fxBotCandidates, aE.gm, fxDirections, fxInterestIncome)) ? aE
+			.fP : fxAutoExpand.target), null !== fxAutoExpand && (aE.l7 ? bB.qZ.hz(fxPlayer, fxAutoExpand.encoded, fxAutoExpandTarget) : b1.qf.qj(fxAutoExpand.encoded, fxAutoExpandTarget))
 	}
 	af.ee(), b5.ee(), aG.ee(), ap.ee(), bQ.z.ee(), am.n2(), aW.ee(), b0.ee(), bY.ee(), ag.ee(), ag.n3(), aX.ee(), bS.ee(), aV.ee(), aQ.ee(), b9.n4(), aO.ee(), b6.ee(), aS.ee(), ax.ee(), bg.ee(), bk.ee(), b1.z.ee(), b1.n5.ee(), u.ee(), bX.eS.ee(), bC
 		.ee(), bi.ee()
@@ -1302,7 +1302,7 @@ function qX() {
 	this.qe = 1, this.ht = function(fE) {
 		aE.l7 ? bB.qZ.ht(aE.fC, fE) : b1.qf.qg(fE)
 	}, this.hz = function(j5, jw) {
-		this.qe && (this.qe = 0, bm.qh.qi(182, j5)), null !== (j5 = __fx.economicAttack.resolve(j5, ah.hT[aE.fC], jw < aE.fO ? ah.hT[jw] : null, jw < aE.fO ? ah.hF[jw] : null, jw < aE.fO ? ae.hU(aE.fC, jw) : 0)) && (aE.l7 ? bB.qZ.hz(aE.fC, j5,
+		this.qe && (this.qe = 0, bm.qh.qi(182, j5)), null !== (j5 = __fx.economicAttack.resolve(j5, ah.hU[aE.fC], jw < aE.fP ? ah.hU[jw] : null, jw < aE.fP ? ah.hG[jw] : null, jw < aE.fP ? ae.hV(aE.fC, jw) : 0)) && (aE.l7 ? bB.qZ.hz(aE.fC, j5,
 			jw) : b1.qf.qj(j5, jw))
 	}, this.qk = function(j5, ql) {
 		aE.l7 ? bB.qZ.qm(aE.fC, j5, ql) : b1.qf.qn(j5, ql)
@@ -1370,7 +1370,7 @@ function qa() {
 		bD.go.hd(0) && bD.go.he(player) && bP.jA(fE) && (bC.rX.rY(0, player, fE), aE.rZ.ei(player, fE))
 	}, this.hz = function(player, j5, jw) {
 		bD.go.hd(1) && bD.go.he(player) && bD.go.ra(player, jw) && bD.go.mv(player, j5, 12, 0) && bD.go.rb(player, jw) && ((jw = ae.k8(player, bR.fO[0])) || ae.kR(player)) && (ah.rc[player]++, bC.rX.rY(1, player, j5, bR.fO[0]), ap.jY.jm(player,
-			jw)) && (player === aE.fB && __fx.autoExpand.acknowledge(bR.fN[0], j4, bi.kj()), bD.go.mx(player), bg.rd(player, j5), ap.jY.js(player))
+			jw)) && (player === aE.fC && __fx.autoExpand.acknowledge(bR.fO[0], j5, bi.kk()), bD.go.mx(player), bg.rd(player, j5), ap.jY.js(player))
 	}, this.qm = function(player, j5, ql) {
 		bD.go.hd(1) && bD.go.he(player) && aE.iM && bD.go.ra(player, ql) && bD.go.re(player, ql) && bD.go.r4(player, bD.go.j4(player, j5), ql) && ao.ei(ql, bR.fz[0]) && (bC.rX.rY(2, player, j5, ql), af.qk(player, ql))
 	}, this.i4 = function(player, j5, qo) {
