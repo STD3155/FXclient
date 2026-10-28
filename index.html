@@ -36,7 +36,7 @@
   <meta itemprop="image" content="https://fxclient.github.io/FXclient/assets/logo.png">
 
   <!-- FX Client CSS -->
-  <link rel="stylesheet" href="main.css?1789239196839">
+  <link rel="stylesheet" href="main.css?1793216955408">
   <!-- Game CSS -->
   <style>
     html,
@@ -112,6 +112,24 @@
         <button onclick="__fx.settingsManager.exportToFile()">Export</button>
       </footer>
     </div>
+    <div class="window flex-column" id="customLobbyJoinMenu" style="display: none">
+      <input type="text" id="lobbyCode" placeholder="Enter lobby code">
+      or
+      <div>
+        <button id="createLobbyButton">Create new lobby</button>
+        <label for="region">in region:</label>
+        <select id="customLobbyRegion" name="region"
+        title="Note: Region selection is a best effort, not a guarantee. The regions listed are only a subset of all the possible locations where a lobby can be created.">
+          <option value="default" selected>Automatic (closest to you)</option>
+          <option value="wnam">Western North America</option>
+          <option value="enam">Eastern North America</option>
+          <option value="weur">Western Europe</option>
+          <option value="eeur">Eastern Europe</option>
+          <option value="apac">Asia-Pacific</option>
+          <option value="oc">Oceania</option>
+        </select>
+      </div>
+    </div>
     <div class="window scrollable selectable" id="playerlist" style="display: none;">
       <h1>Player List</h1>
       <input type="search" id="playerlist_search" placeholder="Search players…" aria-label="Search players">
@@ -142,9 +160,9 @@
       <button onclick="document.getElementById('updateNotification').style.display = 'none'">Dismiss</button>
     </div>
   </div>
-  <script src="variables.js?1789239196839"></script>
-  <script src="fx.bundle.js?1789239196839"></script>
-  <script src="game.js?1789239196839"></script>
+  <script src="variables.js?1793216955408"></script>
+  <script src="fx.bundle.js?1793216955408"></script>
+  <script src="game.js?1793216955408"></script>
 </body>
 
 </html>
