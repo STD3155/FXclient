@@ -1,6 +1,6 @@
 import { KeybindsInput } from "../keybindsInput.js";
 import { LobbyReminderRulesInput } from "../lobbyReminderRulesInput.js";
-import { FollowedAccountNicknames } from "../followedAccounts.js";
+import notifications from "../notifications.js";
 import winCounter from "../winCounter.js";
 import versionData from "../../version.json";
 import { displayChangelog } from "../changelog.js";
@@ -15,13 +15,32 @@ import { component, section } from "./ui.js";
 
 const construct = (Constructor) => (container) => new Constructor(container);
 
+async function clearCacheAndReload() {
+  if (!await notifications.confirm("Clear the cached client files and reload the page?", {
+    confirmLabel: "Clear cache"
+  })) return;
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration => registration.unregister()));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+    window.location.reload();
+  } catch (error) {
+    notifications.show("Could not clear cache: " + error.message, "error", 5000);
+  }
+}
+
 function createFooter(container) {
   const versionInfo = document.createElement("p");
   versionInfo.textContent = `FX Client v${versionData.version}`;
   const links = document.createElement("p");
   links.innerHTML = `<a href="https://discord.gg/dyxcwdNKwK" target="_blank">Discord server</a> |
     <a href="https://github.com/fxclient/FXclient#readme">Github repository</a>`;
-  container.append(versionInfo, links, createButton("Changelog", displayChangelog));
+  container.append(versionInfo, links, createButton("Changelog", displayChangelog), " ", createButton("Clear cache", clearCacheAndReload));
   return {};
 }
 
@@ -100,6 +119,12 @@ export function createSettingsDefinitions({ customQuickEmojis, applyPreset }) {
       label: "Duplicate IP highlighting",
       note: "Highlights players in the lobby's team list who share the same IP hash. Each group of matching IPs gets its own color."
     },
+    {
+      for: "highlightSameClan",
+      type: "checkbox",
+      label: "Same clan highlighting",
+      note: "Highlights you and players with your clan tag in red. Players also highlighted for duplicate IPs get a red outline."
+    },
     { for: "hidePropagandaPopup", type: "checkbox", label: "Hide propaganda popup" },
     {
       for: "detailedTeamPercentage",
@@ -144,7 +169,6 @@ export function createSettingsDefinitions({ customQuickEmojis, applyPreset }) {
       label: "Inappropriate name hider",
       note: "Replaces player names that contain common offensive or inappropriate words with \"Hidden Name\"."
     },
-    component(construct(FollowedAccountNicknames), "followed account nicknames"),
     component(createReplayHistoryList, "saved replay history"),
     component(createFooter)
   ];

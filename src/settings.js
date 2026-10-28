@@ -8,7 +8,7 @@ import {
   exportSettings,
   loadSettings,
   parseSettingsFile,
-  saveSettings
+  saveSettings as persistSettings
 } from "./settings/storage.js";
 import { createSettingsUi } from "./settings/ui.js";
 
@@ -25,7 +25,7 @@ function migrateLegacyEmojiSettings() {
   }
   delete settings.emojiBar;
   delete settings.customEmojiBar;
-  saveSettings(settings);
+  persistSettings(settings);
 }
 
 migrateLegacyEmojiSettings();
@@ -49,7 +49,7 @@ const settingsManager = {
     settingsUi.readInto(settings);
     this.applySettings();
     WindowManager.closeWindow("settings");
-    saveSettings(settings);
+    persistSettings(settings);
     notifications.showAfterReload("Settings saved", "success");
     window.location.reload();
   },
@@ -112,7 +112,7 @@ fileInput.addEventListener("change", () => {
       })) return;
       settings = imported;
       __fx.settings = settings;
-      saveSettings(settings);
+      persistSettings(settings);
       notifications.showAfterReload("Settings imported", "success");
       window.location.reload();
     } catch (error) {
@@ -162,3 +162,7 @@ settingsManager.applySettings();
 
 export default settingsManager;
 export const getSettings = () => settings;
+
+export function saveSettings() {
+  persistSettings(settings);
+}

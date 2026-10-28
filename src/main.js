@@ -22,6 +22,8 @@ import followedAccounts from './followedAccounts.js';
 import notifications from './notifications.js';
 import economicAttack from './economicAttack.js';
 import autoExpand from './autoExpand.js';
+import passwordReset from './passwordReset.js';
+import savedAccounts from './savedAccounts.js';
 
 window.__fx = window.__fx || {};
 const __fx = window.__fx;
@@ -57,5 +59,7 @@ __fx.followedAccounts = followedAccounts;
 __fx.notifications = notifications;
 __fx.economicAttack = economicAttack;
 __fx.autoExpand = autoExpand;
+__fx.passwordReset = passwordReset;
+__fx.savedAccounts = savedAccounts;
 
 console.log('Successfully loaded FX Client');

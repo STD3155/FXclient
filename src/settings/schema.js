@@ -13,6 +13,7 @@ export const defaultSettings = Object.freeze({
   hideBotNames: false,
   highlightClanSpawns: false,
   highlightDuplicateIps: false,
+  highlightSameClan: false,
   detailedTeamPercentage: false,
   openDonationHistoryFromLb: true,
   customBackgroundUrl: "",
@@ -32,7 +33,9 @@ export const defaultSettings = Object.freeze({
   mutePingLanguage: false,
   mutePingDirect: false,
   hideInappropriateNames: false,
-  followedAccountNicknames: {}
+  followedAccountNicknames: {},
+  followedAccountColors: {},
+  savedAccountLabels: {}
 });
 
 export const discontinuedSettings = Object.freeze([
