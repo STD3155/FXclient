@@ -45,6 +45,15 @@ function createFooter(container) {
 }
 
 export function createSettingsDefinitions({ customQuickEmojis, applyPreset }) {
+  const eliminationEstimateText = (navigator.language || "en").toLowerCase().startsWith("de")
+    ? {
+        label: "Geschätzte Angriffsmenge für vollständige Vernichtung anzeigen",
+        note: "Zeigt unter der gegnerischen Dichte eine grobe Truppen-Schätzung zum Ausschalten. Grenzverteidigung ist nicht berücksichtigt.",
+      }
+    : {
+        label: "Show estimated attack size for complete annihilation of a player",
+        note: "Shows a rough troop estimate under enemy density; border defense is not included.",
+      };
   return [
     section("Interface & performance"),
     component((container) => createPerformancePresets(container, applyPreset), "quick presets performance balanced maximum info"),
@@ -89,6 +98,11 @@ export function createSettingsDefinitions({ customQuickEmojis, applyPreset }) {
       type: "checkbox",
       label: "Hide map stats at low zoom",
       note: "Improves responsiveness by only drawing density and growth when player labels are large enough to read."
+    },
+    {
+      for: "showEstimatedEliminationAttack",
+      type: "checkbox",
+      ...eliminationEstimateText
     },
     {
       for: "coloredDensity",

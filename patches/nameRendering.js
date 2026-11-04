@@ -33,7 +33,7 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
     if (placeBalanceAbove) {/*...*/}`)
 
   // Balance rendering; Renders density when the "Reverse Name/Balance" setting is off (default)
-  modifyCode(
+  const { a4f: outgoingBalances } = modifyCode(
     `function aLY(ctx, i, fontSize, x, y, aLU) {
     var a4f = playerData.a4f[i];
     var aLe = Util.s1.formatNumber(playerData.playerBalances[i] - a4f);
@@ -51,6 +51,10 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
         );
         __fx.settings.coloredDensity && (ctx.fillStyle = densityStats.color);
         ctx.fillText(densityStats.text, x, y + fontSize * statsLine++);
+        var eliminationEstimate = __fx.settings.showEstimatedEliminationAttack
+          ? __fx.utils.getEstimatedEliminationAttack(i, playerData.playerBalances[i] - a4f)
+          : "";
+        if (eliminationEstimate) ctx.fillText(eliminationEstimate, x, y + fontSize * statsLine++);
       }
       if (!placeBalanceAbove && showGrowth
           && __fx.utils.playerGrowth && __fx.utils.playerGrowth[i] !== undefined) {
@@ -123,6 +127,14 @@ export default (/** @type {ModUtils} */ { modifyCode, waitForMinification, match
           __fx.settings.coloredDensity && ($<canvas>.fillStyle = ___densityStats.color);
           $<canvas>.fillText(___densityStats.text, $<x>, ___statsY);
           ___statsY += $<fontSize>;
+          var ___eliminationEstimate = __fx.settings.showEstimatedEliminationAttack
+            ? __fx.utils.getEstimatedEliminationAttack(___id,
+                $<playerData>.${safeDictionary.playerBalances}[___id] - $<playerData>.${outgoingBalances}[___id])
+            : "";
+          if (___eliminationEstimate) {
+            $<canvas>.fillText(___eliminationEstimate, $<x>, ___statsY);
+            ___statsY += $<fontSize>;
+          }
         }
         if (___showStats && ${placeBalanceAbove} && ___showGrowth
             && __fx.utils.playerGrowth && __fx.utils.playerGrowth[___id] !== undefined) {

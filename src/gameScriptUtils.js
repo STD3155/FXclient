@@ -56,6 +56,16 @@ function getDensityStats(
 function getDensity(playerID, playerBalances, playerTerritories) {
     return getDensityStats(playerID, playerBalances, playerTerritories).text;
 };
+const estimatedAttackFormatter = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
+function getEstimatedEliminationAttack(playerID, remainingBalance) {
+    if (playerID === getVar("playerId")) return "";
+    const balance = Number.isFinite(remainingBalance)
+        ? Math.max(0, remainingBalance)
+        : getVar("playerBalances")?.[playerID];
+    if (!Number.isFinite(balance) || balance <= 0) return "";
+    // Approximate the attack force as twice the target's current balance; border defense is not included.
+    return `\u2248${estimatedAttackFormatter.format(Math.ceil(balance * 2))}`;
+}
 function isPointInRectangle(x, y, rectangleStartX, rectangleStartY, width, height) {
     return x >= rectangleStartX && x <= rectangleStartX + width && y >= rectangleStartY && y <= rectangleStartY + height;
 };
@@ -164,6 +174,7 @@ function parseAccountId(value) {
 export default {
     getMaxTroops,
     getDensity,
+    getEstimatedEliminationAttack,
     getDensityStats,
     setPlayerRanks,
     getRankedName,

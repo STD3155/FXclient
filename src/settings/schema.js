@@ -8,6 +8,7 @@ export const defaultSettings = Object.freeze({
   realisticNames: false,
   playerStatsMode: "both",
   adaptivePlayerStats: true,
+  showEstimatedEliminationAttack: false,
   coloredDensity: true,
   densityDisplayStyle: "absoluteQuotient",
   hideBotNames: false,
