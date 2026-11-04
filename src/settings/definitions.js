@@ -1,6 +1,7 @@
 import { KeybindsInput } from "../keybindsInput.js";
 import { LobbyReminderRulesInput } from "../lobbyReminderRulesInput.js";
 import notifications from "../notifications.js";
+import { clearClientCache } from "../clientCache.js";
 import winCounter from "../winCounter.js";
 import versionData from "../../version.json";
 import { displayChangelog } from "../changelog.js";
@@ -20,14 +21,11 @@ async function clearCacheAndReload() {
     confirmLabel: "Clear cache"
   })) return;
   try {
-    if ("serviceWorker" in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(registration => registration.unregister()));
-    }
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(key => caches.delete(key)));
-    }
+    await clearClientCache({
+      serviceWorker: navigator.serviceWorker,
+      cacheStorage: window.caches,
+      pageUrl: window.location.href
+    });
     window.location.reload();
   } catch (error) {
     notifications.show("Could not clear cache: " + error.message, "error", 5000);

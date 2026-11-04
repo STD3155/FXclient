@@ -113,6 +113,7 @@ function setWindowVisible(windowName, visible) {
   }
 }
 function closeAll() {
+  if (document.querySelector(".fx-confirm-overlay")) return;
   const windowList = Array.from(windows.values());
   if (windowList.some((windowObj) => windowObj.modal === true && windowObj.isOpen === true)) return;
   windowList.forEach(function (windowObj) {
@@ -131,11 +132,12 @@ document.addEventListener(
 
 requireElementById("canvasA").addEventListener("touchstart", closeAll, { passive: true });
 document.addEventListener("keydown", (event) => {
+  if (document.querySelector(".fx-confirm-overlay")) return;
   const openWindows = Array.from(windows.values())
     .filter((windowObj) => windowObj.isOpen && windowObj.element.style.display !== "none");
   const topWindow = openWindows[openWindows.length - 1];
   if (event.key === "Escape") {
-    if (topWindow?.closable !== false) closeWindow(topWindow.name);
+    if (topWindow && topWindow.closable !== false) closeWindow(topWindow.name);
     return;
   }
   if (event.key !== "Tab" || topWindow?.modal !== true) return;

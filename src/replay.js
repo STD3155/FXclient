@@ -114,17 +114,26 @@ playButton.addEventListener("click", () => replay.togglePlayPause());
 rewindButton.addEventListener("click", () => jumpBy(-10));
 forwardButton.addEventListener("click", () => jumpBy(10));
 
+const handledReplayKeys = new Set();
 document.addEventListener("keydown", (event) => {
     if (!replay.isWatching() || event.ctrlKey || event.metaKey || event.altKey) return;
     const target = event.target;
     if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName))) return;
-    if (event.key === " ") replay.togglePlayPause();
+    if (event.key === " ") {
+        if (!event.repeat) replay.togglePlayPause();
+    }
     else if (event.key === "ArrowLeft") jumpBy(-10);
     else if (event.key === "ArrowRight") jumpBy(10);
     else return;
+    handledReplayKeys.add(event.code || event.key);
     event.preventDefault();
     event.stopImmediatePropagation();
-});
+}, true);
+document.addEventListener("keyup", (event) => {
+    if (!handledReplayKeys.delete(event.code || event.key)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+}, true);
 
 const trackFraction = (event) => {
     const rect = track.getBoundingClientRect();

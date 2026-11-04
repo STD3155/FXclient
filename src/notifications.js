@@ -30,6 +30,7 @@ function showAfterReload(message, type = "info") {
 }
 
 function confirmAction(message, options = {}) {
+    const previousFocus = document.activeElement;
     return new Promise((resolve) => {
         const overlay = document.createElement("div");
         overlay.className = "fx-confirm-overlay";
@@ -53,13 +54,22 @@ function confirmAction(message, options = {}) {
         overlay.append(dialog);
         document.body.append(overlay);
 
+        let finished = false;
         const finish = (answer) => {
+            if (finished) return;
+            finished = true;
             document.removeEventListener("keydown", onKeyDown, true);
             overlay.remove();
+            if (previousFocus instanceof HTMLElement && document.contains(previousFocus))
+                previousFocus.focus({ preventScroll: true });
             resolve(answer);
         };
         const onKeyDown = (event) => {
-            if (event.key === "Escape") finish(false);
+            event.stopImmediatePropagation();
+            if (event.key === "Escape") {
+                event.preventDefault();
+                finish(false);
+            }
             if (event.key === "Tab") {
                 event.preventDefault();
                 (document.activeElement === cancel ? accept : cancel).focus();

@@ -25,9 +25,13 @@ export function KeybindsInput(/** @type {HTMLElement} */ containerElement) {
     this.update = function (settings) {
         this.objectArray = Array.isArray(settings.attackPercentageKeybinds)
             ? settings.attackPercentageKeybinds.filter((entry) => entry !== null && typeof entry === "object")
+                .map((entry) => ({ ...entry }))
             : [];
         this.displayObjects();
-    }
+    };
+    this.save = function (settings) {
+        settings.attackPercentageKeybinds = this.objectArray.map((entry) => ({ ...entry }));
+    };
     this.displayObjects = function () {
         // Clear the content of the container
         this.container.innerHTML = "";

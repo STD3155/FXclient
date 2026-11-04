@@ -1,4 +1,5 @@
 import WindowManager from "./windowManager.js";
+import notifications from "./notifications.js";
 
 const customLobbiesUnavailable = false;
 //const socketURL = "ws://localhost:8080/";
@@ -150,10 +151,16 @@ function createButton(text, action) {
 }
 const startButton = createButton("Start game", startGame);
 const leaveButton = createButton("Leave lobby", () => leaveLobby());
-const copyLinkButton = createButton("Copy link", () => {
-    navigator.clipboard.writeText(`${window.location.href}#lobby=${currentCode}`);
-    copyLinkButton.textContent = "Copied!";
-    setTimeout(() => copyLinkButton.textContent = "Copy link", 1000);
+const copyLinkButton = createButton("Copy link", async () => {
+    const url = new URL(window.location.href);
+    url.hash = `lobby=${currentCode}`;
+    try {
+        await navigator.clipboard.writeText(url.href);
+        copyLinkButton.textContent = "Copied!";
+        setTimeout(() => copyLinkButton.textContent = "Copy link", 1000);
+    } catch (error) {
+        notifications.show("Could not copy the lobby link", "error");
+    }
 });
 footer.append(startButton, leaveButton, copyLinkButton);
 
