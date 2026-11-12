@@ -1,5 +1,5 @@
 const cachePrefix = "fxclient-";
-const cacheName = cachePrefix + "1793821422009"; // timestamp gets replaced by the build script
+const cacheName = cachePrefix + "1794484187932"; // timestamp gets replaced by the build script
 const cachePromise = caches.open(cacheName);
 
 self.addEventListener("message", (e) => {
