@@ -43,6 +43,7 @@ function renderMobileButtons() {
         const x = index * (buttonWidth + gap);
         ctx.fillStyle = active ? "rgba(0, 125, 35, 0.92)" : "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(x, 0, buttonWidth, height);
+        __fx.utils.smoothFrame(ctx, buttonWidth, height, 1, x, 0);
         ctx.fillStyle = "white";
         if (remainingSeconds > 0) {
             ctx.font = "bold " + height * 0.36 + "px " + fontName;

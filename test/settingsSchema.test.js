@@ -44,3 +44,15 @@ test("rejects non-object settings", () => {
   assert.throws(() => normalizeSettings(null), /JSON object/);
   assert.throws(() => normalizeSettings([]), /JSON object/);
 });
+
+
+test("new upstream toggles survive normalization and settings export", () => {
+  const defaults = normalizeSettings({});
+  assert.equal(defaults.smoothUI, true);
+  assert.equal(defaults.applyRecommendedTerritorialSettings, true);
+  const settings = normalizeSettings({ smoothUI: false, applyRecommendedTerritorialSettings: false, mutePingRoom: true });
+  const restored = normalizeSettings(createSettingsDocument(settings));
+  assert.equal(restored.smoothUI, false);
+  assert.equal(restored.applyRecommendedTerritorialSettings, false);
+  assert.equal("mutePingRoom" in restored, false);
+});

@@ -5,7 +5,7 @@ import UglifyJS from 'uglify-js';
 import fs from 'fs';
 import webpack from 'webpack';
 import path from 'path';
-import ModUtils, { minifyCode } from './modUtils.js';
+import ModUtils, { minifyCode, tryParseGameVersion } from './modUtils.js';
 
 { // color debug output in gray
   const old_debug = console.debug
@@ -67,12 +67,14 @@ async function patchGameCode() {
 	const stringArray = JSON.parse(stringArrayRaw);
 	script = script.replace(/\bS\[(\d+)\]/g, (_match, index) => `"${stringArray[index]}"`);
 
-	const modUtils = new ModUtils(minifyCode(script));
+	const modUtils = new ModUtils(minifyCode(script))
+	const v = tryParseGameVersion(modUtils)
+	fs.writeFileSync("./build/version.txt", v === null ? "unknown" : `${v.game} ${v.protocol}`)
 
 	/** @type {{ code: string, addToDictionary: string[] }[]} */
 	const codeSegments = [{
 		code: `player = aQ.eF(eR);
-			if (game.gIsReplay) { game.playerId = player; }
+			if ((game.gIsReplay || game.gIsObserver) && player !== game.playerId) { game.playerId = player; someObj.someFn(); }
 			str = __L(/* Player: {0} */ [b0.context.truncateAndFillText(playerData.rawPlayerNames[player], b0.qZ.sN(0, 10), 150)]) + "   ";
 			str += __L(/* Strength: {10} */ [b0.rY.formatNumber(playerData.playerBalances[player])]) + "   ";
 			str += __L(/* Territory: {10} */ [b0.rY.formatNumber(playerData.playerTerritories[player])]) + "   ";

@@ -42,7 +42,7 @@ function contextFor(tick, singleplayer) {
   const tickCalls = fixture.match(/function n0\(\)\{([^}]+)\}/)[1];
   for (const [, path] of tickCalls.matchAll(/([\w.]+)\(\)/g)) assign(path, noop);
   for (const [path, value] of Object.entries({
-    'aE.ha': false, 'aN.hb': false, 'aE.fB': 0, 'aE.fO': 512, 'aE.km': 1,
+    'aE.ha': false, 'aE.isObserver': false, 'aN.hb': false, 'aE.fB': 0, 'aE.fO': 512, 'aE.km': 1,
     'aE.l6': singleplayer, 'aE.gl': 2, 'aE.kW': 1000000,
     'aE.data': { aIncomeType: 0, tIncomeType: 0, iIncomeType: 0 },
     'bD.gn.hc': () => true, 'bD.gn.hd': () => true, 'bD.gn.lQ': () => true,
@@ -102,5 +102,22 @@ test('renamed balances and attack handlers support manual ECO attacks and acknow
     assert.deepEqual(resolved, [511, 864, 50, 10, 0]);
     assert.deepEqual(acknowledged, [512, 127, 80]);
     assert.deepEqual(sends, [singleplayer ? ['local', 0, 127, 1] : ['server', 127, 1]]);
+  }
+});
+
+
+test('observer mode blocks automatic and manual ECO attacks', () => {
+  const functions = patchedFunctions();
+  for (const singleplayer of [false, true]) {
+    const { context, sends } = contextFor(70, singleplayer);
+    context[rename('aE')][rename('isObserver')] = true;
+    let plans = 0;
+    context.__fx = {
+      economicAttack: { isArmed: () => true, resolve: () => { plans++; return 127; } },
+      autoExpand: { update() {}, canPlan: () => { plans++; return true; } }
+    };
+    vm.runInNewContext(`${functions.n0}; n0(); (${functions.send}).call({},511,1);`, context);
+    assert.equal(plans, 0);
+    assert.deepEqual(sends, []);
   }
 });

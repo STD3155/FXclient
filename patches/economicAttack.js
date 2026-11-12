@@ -6,6 +6,7 @@ export default (/** @type {import('../modUtils.js').default} */ modUtils) => {
     // Resolve every outgoing land attack in one place. When ECO is armed this
     // caps the required conquest amount at the percentage selected by the user.
     insertCode(`this.hy = function(j4, jv) {
+        if (aE.isObserver) { return; }
         if (this.pl) { this.pl = 0; bm.po.pp(182, j4); }
         /* here */
         if (aE.l6) { bB.pg.hy(aE.fB, j4, jv); }

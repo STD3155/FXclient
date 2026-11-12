@@ -5,6 +5,7 @@ export const defaultSettings = Object.freeze({
   displayTickNumber: true,
   useFullscreenMode: false,
   hoveringTooltip: true,
+  applyRecommendedTerritorialSettings: true,
   realisticNames: false,
   playerStatsMode: "both",
   adaptivePlayerStats: true,
@@ -15,6 +16,7 @@ export const defaultSettings = Object.freeze({
   highlightClanSpawns: false,
   highlightDuplicateIps: false,
   highlightSameClan: false,
+  smoothUI: true,
   detailedTeamPercentage: false,
   openDonationHistoryFromLb: true,
   customBackgroundUrl: "",
@@ -29,7 +31,6 @@ export const defaultSettings = Object.freeze({
   lobbyReminderRules: [],
   mutePingAll: false,
   mutePingEveryone: false,
-  mutePingRoom: false,
   mutePingClan: false,
   mutePingLanguage: false,
   mutePingDirect: false,
@@ -43,7 +44,8 @@ export const discontinuedSettings = Object.freeze([
   "hideAllLinks",
   "fontName",
   "showPlayerDensity",
-  "showPlayerGrowth"
+  "showPlayerGrowth",
+  "mutePingRoom"
 ]);
 
 const statModes = new Set(["off", "growth", "density", "both"]);

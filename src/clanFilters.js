@@ -74,18 +74,19 @@ export const leaderboardFilter = new (function() {
         const tabWidth = totalWidth / this.tabLabels.length;
         const textOffsetY = verticalOffset + this.tabBarOffset / 2;
         //console.log(verticalOffset, this.tabBarOffset, textOffsetY);
+        const lineColor = canvas.fillStyle;
         this.tabLabels.forEach((label, index) => {
+            canvas.fillStyle = lineColor;
             if (index !== 0) canvas.fillRect(tabWidth * index, verticalOffset, 1, this.tabBarOffset);
             if (this.selectedTab === index) {
                 canvas.fillStyle = colorForSelectedTab;
                 canvas.fillRect(tabWidth * index, verticalOffset, tabWidth, this.tabBarOffset);
-                canvas.fillStyle = "rgb(255,255,255)";
             }
             if (this.tabHovering === index) {
                 canvas.fillStyle = "rgba(255,255,255,0.3)";
                 canvas.fillRect(tabWidth * index, verticalOffset, tabWidth, this.tabBarOffset);
-                canvas.fillStyle = "rgb(255,255,255)";
             }
+            canvas.fillStyle = "rgb(255,255,255)";
             canvas.fillText(label, tabWidth * index + tabWidth / 2, textOffsetY);
         });
     }
@@ -111,11 +112,12 @@ export const leaderboardFilter = new (function() {
         if (this.selectedTab !== tab) {
             this.selectedTab = tab;
             this.showingRivals = false;
-            if (this.selectedTab === 0) this.clearFilter();
-            else if (this.selectedTab === 1) {
-                this.filterByOwnClan();
+            const label = this.tabLabels[tab];
+            if (label === "ALL") this.clearFilter();
+            else if (label === "CLAN" || label === "TEAM") {
+                label === "CLAN" ? this.filterByOwnClan() : this.filterByOwnTeam();
                 this.setUpdateFlag();
-            } else if (this.selectedTab === 2) {
+            } else if (label === "RIVALS") {
                 this.enabled = false;
                 this.showingRivals = true;
                 this.computeRivals(true);
@@ -135,6 +137,14 @@ export const leaderboardFilter = new (function() {
         this.enabled = true;
         this.scrollToTop();
     };
+    this.filterByOwnTeam = () => {
+        const teamColors = getVar("playerTeamColors");
+        const ownColor = teamColors[getVar("playerId")];
+        this.playersToInclude = [];
+        teamColors.forEach((color, id) => { if (color === ownColor) this.playersToInclude.push(id); });
+        this.enabled = true;
+        this.scrollToTop();
+    };
     this.clearFilter = () => { this.enabled = false; }
     this.reset = () => {
         this.enabled = false;
@@ -145,6 +155,7 @@ export const leaderboardFilter = new (function() {
         cachedRawNames = null;
         cachedHumanCount = -1;
         parsedClans = [];
+        this.tabLabels = getVar("gIsTeamGame") ? ["ALL", "CLAN", "TEAM", "RIVALS"] : ["ALL", "CLAN", "RIVALS"];
         clanFilter.refresh();
     }
 });

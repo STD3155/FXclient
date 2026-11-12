@@ -100,7 +100,9 @@ for (const copyFails of [false, true]) {
     dom.context.notifications = { show: () => { errorShown = true; } };
     const lobby = dom.load("customLobby.js");
     lobby.setJoinFunction(() => {});
-    dom.timers.shift()();
+    const codeInput = dom.document.getElementById("lobbyCode");
+    codeInput.value = "abcde";
+    dom.dispatch("input", codeInput);
     const copy = dom.document.body.querySelectorAll("button").find(button => button.textContent === "Copy link");
     await copy.listeners.get("click")[0].callback();
     if (copyFails) {
@@ -112,3 +114,16 @@ for (const copyFails of [false, true]) {
     }
   });
 }
+
+
+test("shared custom-lobby links show the upstream unavailability notice", () => {
+  const dom = setupWindows();
+  for (const id of ["customLobbyJoinMenu", "lobbyCode", "createLobbyButton", "customLobbyRegion"]) dom.addElement(id);
+  dom.window.location.hash = "#lobby=abcde";
+  const lobby = dom.load("customLobby.js");
+  let joins = 0;
+  lobby.setJoinFunction(() => joins++);
+  dom.timers.shift()();
+  assert.equal(joins, 0);
+  assert.equal(dom.manager.isWindowOpen("customLobbiesUnavailable"), true);
+});

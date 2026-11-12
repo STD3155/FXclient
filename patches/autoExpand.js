@@ -39,7 +39,7 @@ export default (/** @type {import('../modUtils.js').default} */ modUtils) => {
         bC.ed();
         bi.ed();
         }`, `if (__fx.economicAttack.isArmed()) __fx.autoExpand.update(bi.kj(), bi.aCo);
-        if (__fx.economicAttack.isArmed() && !aE.ha && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
+        if (__fx.economicAttack.isArmed() && !aE.ha && !aE.isObserver && !aN.hb && bD.gn.hc(1) && bD.gn.hd(aE.fB)
             && __fx.autoExpand.canPlan(bi.kj())
             && (bi.kj() >= __fx.autoExpand.openingEndTick
                 || (bi.kj() % 10 === 0 && __fx.autoExpand.shouldPlanOpening(bi.kj())))

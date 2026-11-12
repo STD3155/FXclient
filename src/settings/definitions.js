@@ -75,6 +75,18 @@ export function createSettingsDefinitions({ customQuickEmojis, applyPreset }) {
       label: "Hovering tooltip",
       note: "Display map territory info constantly (on mouse hover) instead of only when right clicking on the map"
     },
+    {
+      for: "smoothUI",
+      type: "checkbox",
+      label: "Smoother UI style",
+      note: "Softer lines, rounded boxes, fading pages and buttons, thin scrollbars, a cleaner multiplayer lobby and a matching in-game HUD."
+    },
+    {
+      for: "applyRecommendedTerritorialSettings",
+      type: "checkbox",
+      label: "Recommended territorial settings",
+      note: "Sets Resolution to Very High, Minimum Font Size to Very Small, Text Rendering Speed to Fast, Place Balance Above to On, and Large UI off. Turn this off to keep your own territorial settings."
+    },
     { for: "realisticNames", type: "checkbox", label: "Realistic Bot Names" },
     component(customQuickEmojis, "custom quick emojis"),
 

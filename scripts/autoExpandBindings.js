@@ -16,9 +16,9 @@ export function getAutoExpandBindings(modUtils) {
     }
   };
   bind(`this.hZ = function(code) {
-    if (aE.ha || aN.hb) { return; }
+    if (aE.ha || aE.isObserver || aN.hb) { return; }
     if (!bD.gn.hc(0) && !bD.gn.hc(1)) { return; }
-    if (!bD.gn.hd(aE.fB)) { return; } /*...*/ }`, 'aE ha aN hb bD gn hc hd fB');
+    if (!bD.gn.hd(aE.fB)) { return; } /*...*/ }`, 'aE ha isObserver aN hb bD gn hc hd fB');
   bind(`this.lQ = function(player, jv) {
     return player !== jv && (bj.fP[player] === 0 || bj.fP[player] !== bj.fP[jv]);
   };`, 'lQ');
@@ -44,6 +44,7 @@ export function getAutoExpandBindings(modUtils) {
   bind(`var aKv = bO.fs(af.aCn(gz) * hT[gz], 10000);`, 'af aCn');
   bind(`gL = bO.fs(gJ, gN); if (gL > aE.gl) { return true; }`, 'gl');
   bind(`this.hy = function(j4, jv) {
+    if (aE.isObserver) { return; }
     if (this.pl) { this.pl = 0; bm.po.pp(182, j4); }
     if (aE.l6) { bB.pg.hy(aE.fB, j4, jv); }
     else { b1.pm.pq(j4, jv); }

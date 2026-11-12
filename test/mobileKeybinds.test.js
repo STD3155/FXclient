@@ -6,6 +6,7 @@ import { createAutoExpandController } from "../src/autoExpand.js";
 
 test("ECO canvas displays the live cooldown and returns to the ready label", () => {
   const labels = [];
+  const frames = [];
   const ctx = { clearRect() {}, fillRect() {}, fillText(text) { labels.push(text); } };
   const autoExpand = createAutoExpandController();
   let onEconomicModeChange;
@@ -16,13 +17,16 @@ test("ECO canvas displays the live cooldown and returns to the ready label", () 
     getUIGap: () => 10,
     getSettings: () => ({ keybindButtons: false }),
     economicAttack: { isArmed: () => true, subscribe(listener) { onEconomicModeChange = listener; } },
-    autoExpand
+    autoExpand,
+    __fx: { utils: { smoothFrame: (...args) => frames.push(args) } }
   });
   vm.runInContext(source + '\nkeybindFunctions.repaintAttackPercentageBar = () => { throw new Error("attack bar not initialized"); };', context);
   assert.doesNotThrow(() => onEconomicModeChange());
   assert.doesNotThrow(() => autoExpand.reset());
   vm.runInContext('keybindFunctions.repaintAttackPercentageBar = () => {}; mobileKeybinds.setSize(700, 40, { font: "16px sans-serif" });', context);
   assert.equal(labels.at(-1), "ECO ✓");
+  assert.equal(frames.at(-1)[0], ctx);
+  assert.equal(frames.at(-1)[2], 40);
   const attack = autoExpand.planProactive(0, 9_900, 100, 10_100, 10, 512);
   autoExpand.acknowledge(512, attack.encoded, 0);
   assert.equal(labels.at(-1), "2.8s");

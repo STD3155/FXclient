@@ -83,6 +83,9 @@ const settingsManager = {
     document.body.style.backgroundSize = customBackground ? "cover" : "";
     document.body.style.backgroundPosition = customBackground ? "center" : "";
     __fx.makeMainMenuTransparent = Boolean(customBackground);
+    const smoothUiChanged = document.documentElement.classList.contains("fx-smooth") !== settings.smoothUI;
+    document.documentElement.classList.toggle("fx-smooth", settings.smoothUI);
+    if (smoothUiChanged) window.dispatchEvent(new Event("resize"));
   }
 };
 

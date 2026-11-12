@@ -80,7 +80,6 @@ export function createStartingPercentage(container) {
 export function createMutePingSection(container) {
   const pingTypes = [
     { key: "mutePingEveryone", label: "Mute @all, @everyone and @0ya pings" },
-    { key: "mutePingRoom", label: "Mute @room1 - @room4 pings" },
     { key: "mutePingClan", label: "Mute clan pings (@[TAG])" },
     { key: "mutePingLanguage", label: "Mute language pings (@en, @de, ...)" },
     { key: "mutePingDirect", label: "Mute pings of your username" }
